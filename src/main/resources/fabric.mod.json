@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "games_ai",
+  "version": "${version}",
+  "name": "GamesAI",
+  "description": "This Minecraft mod allows you to use AI on the server and the games",
+  "authors": [],
+  "contact": {},
+  "license": "MIT",
+  "icon": "assets/games_ai/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "fabric-datagen": [
+      "io.github.pengzixuan30.gamesai.client.GamesAIDataGenerator"
+    ],
+    "client": [
+      "io.github.pengzixuan30.gamesai.client.GamesAIClient"
+    ],
+    "main": [
+      "io.github.pengzixuan30.gamesai.GamesAI"
+    ]
+  },
+  "mixins": [
+    "games_ai.mixins.json",
+    {
+      "config": "games_ai.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-api": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}
