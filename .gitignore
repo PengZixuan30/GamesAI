@@ -1,18 +1,18 @@
 # MacOS DS_Store files
-.DS_Store
+.DS_Store/
 
 # Gradle cache folder
-.gradle
+.gradle/
 
 # Gradle build folder
-build
+build/
 
 # VS Code Java extension output
-bin
+bin/
 
 # IntelliJ
 out/
-.idea
+.idea/
 *.iml
 # mpeltonen/sbt-idea plugin
 .idea_modules/
@@ -21,8 +21,8 @@ out/
 hs_err_pid*
 
 # Common working directory
-run
+run/
 
-.fake
+.fake/
 
-.vscode
+.vscode/

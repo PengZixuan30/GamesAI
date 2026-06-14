@@ -74,6 +74,8 @@ On first run, a default config is created at:
 
 ```json
 {
+  "prefix": "[GamesAI]",
+  "max_history": 10,
   "all_ai": {
     "gpt4o": {
       "prompt": "You are a Minecraft expert.",
@@ -94,7 +96,20 @@ On first run, a default config is created at:
 }
 ```
 
-> **Tip:** Setting `api_key` to `"ollama"` works as a placeholder for local models that don't require authentication.
+> **Tip:** For Ollama / local models, set `api_key` to `"ollama"` as a placeholder.
+
+---
+
+## Conversation History
+
+The mod maintains **per-player, per-model** conversation history in memory.
+
+| Setting | Behavior |
+|---------|----------|
+| `max_history: 10` | Keeps last 10 rounds (20 messages) per player per model |
+| Exceeded | Oldest rounds trimmed, keeping complete user-assistant pairs |
+| `system` prompt | Injected fresh each request, not stored in history |
+| Restart | Server restart clears all history |
 
 ---
 
@@ -128,24 +143,26 @@ src/
 
 ```mermaid
 flowchart LR
-    Config[config.json] -->|load| Manager[GamesAIConfigManager]
-    Manager --> ConfigModel[GamesAIConfig]
-    ConfigModel --> Main[GamesAI mod entry]
-    Main --> Commands[GamesAICommands]
-    Commands -->|/ask| API[GamesAIRequestAI]
+    Config[json] -->|load| Manager[GamesAIConfigManager]
+    Manager --> Model[GamesAIConfig]
+    Model --> Main[GamesAI]
+    Main --> Cmd[GamesAICommands]
+    Cmd -->|/ask| API[GamesAIRequestAI]
     API -->|HTTP| OpenAI[OpenAI API]
-    OpenAI --> API
-    API -->|response| Commands
-    Commands -->|sendMessage| Player[Minecraft Player]
+    Main --> History[(allHistory)]
+    History --> API
+    API --> History
+    API -->|response| Cmd
+    Cmd -->|sendMessage| Player[Minecraft Player]
 ```
 
 | Class | Responsibility |
 |-------|---------------|
-| `GamesAI` | Mod lifecycle, config initialization, command hook registration |
-| `GamesAICommands` | Command tree (`/ask`, `/ask -m`, `/ask --model`), async dispatch |
-| `GamesAIConfig` | POJO with `all_ai` profiles map + `default_ai` selector |
-| `GamesAIConfigManager` | JSON serialization (GSON), file I/O to `config/games_ai/` |
-| `GamesAIRequestAI` | HTTP client wrapping OpenAI Java SDK, formats chat completions |
+| `GamesAI` | Mod lifecycle, config, `allHistory` CRUD, `safeTrimHistory` |
+| `GamesAICommands` | Command tree (`/ask`, `/ask -m`, help), async dispatch with `CompletableFuture` |
+| `GamesAIConfig` | Data model: `prefix`, `max_history`, `all_ai` profiles, `default_ai` |
+| `GamesAIConfigManager` | GSON serialization, file I/O to `config/games_ai/config.json` |
+| `GamesAIRequestAI` | OpenAI SDK client, builds messages (`system → history → user`), manages history writes |
 
 ---
 
@@ -158,9 +175,9 @@ flowchart LR
 | Fabric API | 0.134.1+1.21.10 | Fabric hooks & utilities |
 | Yarn Mappings | 1.21.10+build.3 | Deobfuscation mappings |
 | Fabric Loom | 1.16-SNAPSHOT | Gradle build plugin |
-| OpenAI Java SDK | 4.39.1 | HTTP client for OpenAI-compatible APIs |
-| GSON | *(transitive)* | JSON parsing (bundled with Fabric) |
-| SLF4J | *(transitive)* | Structured logging (bundled with Fabric) |
+| [openai-java](https://github.com/openai/openai-java) | 4.39.1 | OpenAI API client |
+| GSON | *(transitive)* | JSON parsing |
+| SLF4J | *(transitive)* | Logging |
 
 ---
 
@@ -220,6 +237,14 @@ Then rebuild and test. Check [fabricmc.net/develop](https://fabricmc.net/develop
 
 ---
 
+## Server Notes
+
+- **Permission:** Add `.requires(source -> source.hasPermissionLevel(2))` to restrict `/ask` to admins on public servers
+- **History is in-memory only** — server restart clears all conversations
+- **API costs** — each `/ask` makes one HTTP request to the configured endpoint
+
+---
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
@@ -228,6 +253,6 @@ This project is licensed under the [MIT License](LICENSE).
 
 ## Acknowledgements
 
-- [FabricMC](https://fabricmc.net) — Modding framework and toolchain
-- [OpenAI Java SDK](https://github.com/openai/openai-java)
+- [FabricMC](https://fabricmc.net) — Modding framework
+- [openai/openai-java](https://github.com/openai/openai-java) — The official Java library for the OpenAI API
 - Minecraft is a trademark of Mojang / Microsoft. This mod is not affiliated with Mojang.

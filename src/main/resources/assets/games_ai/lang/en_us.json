@@ -1,4 +1,9 @@
 {
+  "help.games_ai.basic": "Welcome to GamesAI! Version: %s",
+  "help.games_ai.command.basic": "Type ",
+  "help.games_ai.command.ask": " to ask AI",
+  "help.games_ai.ai.model": "Available AI models: %s",
+
   "command.games_ai.ask.thinking": "§7AI is thinking...§r",
   "command.games_ai.ask.thinking_model": "§7AI is thinking (model: %s)...§r",
   "command.games_ai.ask.empty": "§cPlease enter your question.§r",

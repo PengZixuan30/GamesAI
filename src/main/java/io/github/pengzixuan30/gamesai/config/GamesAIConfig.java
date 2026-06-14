@@ -7,6 +7,9 @@ import java.util.Map;
 
 public class GamesAIConfig {
 
+    @SerializedName("prefix")
+    private String prefix = "[GamesAI]";
+
     @SerializedName("max_history")
     private int maxHistory = 10;
 
@@ -63,6 +66,10 @@ public class GamesAIConfig {
         return maxHistory;
     }
 
+    public String getPrefix() {
+        return prefix;
+    }
+
     public void setAllAi(Map<String, AiProfile> allAi) {
         this.allAi = allAi;
     }
@@ -70,7 +77,12 @@ public class GamesAIConfig {
     public void setDefaultAi(String defaultAi) {
         this.defaultAi = defaultAi;
     }
+
     public void setMaxHistory(int maxHistory) {
         this.maxHistory = maxHistory;
+    }
+
+    public void setPrefix(String prefix) {
+        this.prefix = prefix;
     }
 }

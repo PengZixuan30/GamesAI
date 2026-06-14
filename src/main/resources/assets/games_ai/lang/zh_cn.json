@@ -1,4 +1,9 @@
 {
+  "help.games_ai.basic": "欢迎使用GamesAI模组!当前版本: %s",
+  "help.games_ai.command.basic": "输入",
+  "help.games_ai.command.ask": "以向AI提问",
+  "help.games_ai.ai.model": "当前有以下AI模型: %s",
+
   "command.games_ai.ask.thinking": "§7AI 思考中...§r",
   "command.games_ai.ask.thinking_model": "§7AI 思考中（模型: %s）...§r",
   "command.games_ai.ask.empty": "§c请输入你的问题。§r",

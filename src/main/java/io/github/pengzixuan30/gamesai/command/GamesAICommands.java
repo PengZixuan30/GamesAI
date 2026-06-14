@@ -4,11 +4,14 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 
+import io.github.pengzixuan30.gamesai.config.GamesAIConfig;
 import io.github.pengzixuan30.gamesai.openai.GamesAIRequestAI;
 import io.github.pengzixuan30.gamesai.GamesAI;
 
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
+import net.minecraft.text.ClickEvent;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -24,18 +27,23 @@ public class GamesAICommands {
                         .then(argument("content", StringArgumentType.greedyString())
                             .executes(GamesAICommands::executeModelAsk)
                         )
+                        .executes(GamesAICommands::executeHelp)
                     )
+                    .executes(GamesAICommands::executeHelp)
                 )
                 .then(literal("--model")
                     .then(argument("model", StringArgumentType.word())
                         .then(argument("content", StringArgumentType.greedyString())
                             .executes(GamesAICommands::executeModelAsk)
                         )
+                        .executes(GamesAICommands::executeHelp)
                     )
+                    .executes(GamesAICommands::executeHelp)
                 )
                 .then(argument("content", StringArgumentType.greedyString())
                     .executes(GamesAICommands::executeAsk)
                 )
+                .executes(GamesAICommands::executeHelp)
         );
     }
 
@@ -67,6 +75,7 @@ public class GamesAICommands {
 
         return 1;
     }
+
     private static int executeModelAsk(CommandContext<ServerCommandSource> ctx) {
         String model = StringArgumentType.getString(ctx, "model");
         String content = StringArgumentType.getString(ctx, "content");
@@ -93,6 +102,50 @@ public class GamesAICommands {
                     GamesAI.LOGGER.error("Failed to schedule feedback on server thread", e);
                 }
             });
+
+        return 1;
+    }
+
+    private static int executeHelp(CommandContext<ServerCommandSource> ctx) {
+        ServerCommandSource source = ctx.getSource();
+        GamesAIConfig config = GamesAI.getConfig();
+        String version = FabricLoader.getInstance()
+            .getModContainer("games_ai")
+            .orElseThrow()
+            .getMetadata()
+            .getVersion()
+            .getFriendlyString();
+
+        source.sendFeedback(() -> Text.literal("")
+                .append(Text.literal(config.getPrefix()))
+                .append(Text.translatable("help.games_ai.basic", version)),
+                    false);
+        source.sendFeedback(() -> Text.literal("")
+                .append(Text.literal(config.getPrefix()))
+                .append(Text.translatable("help.games_ai.command.basic"))
+                .append(Text.literal("/ask <content>")
+                        .styled(style -> style
+                                .withClickEvent(new ClickEvent.SuggestCommand(
+                                        "/ask "
+                                        ))
+                                ))
+                .append(Text.translatable("help.games_ai.command.ask")),
+                                false);
+        source.sendFeedback(() ->  Text.literal("")
+                .append(Text.literal(config.getPrefix()))
+                .append(Text.translatable("help.games_ai.command.basic"))
+                .append(Text.literal("/ask -m <model> <content>")
+                        .styled(style -> style
+                                .withClickEvent(new ClickEvent.SuggestCommand(
+                                        "/ask -m "
+                                ))
+                        ))
+                .append(Text.translatable("help.games_ai.command.ask")),
+        false);
+        source.sendFeedback(() ->  Text.literal("")
+                .append(Text.literal(config.getPrefix()))
+                .append(Text.translatable("help.games_ai.ai.model", String.join(", ", config.getAllAi().keySet()))),
+        false);
 
         return 1;
     }

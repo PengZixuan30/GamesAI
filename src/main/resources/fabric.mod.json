@@ -10,9 +10,6 @@
   "icon": "assets/games_ai/icon.png",
   "environment": "*",
   "entrypoints": {
-    "fabric-datagen": [
-      "io.github.pengzixuan30.gamesai.client.GamesAIDataGenerator"
-    ],
     "client": [
       "io.github.pengzixuan30.gamesai.client.GamesAIClient"
     ],
