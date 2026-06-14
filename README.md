@@ -1,9 +1,9 @@
 # GamesAI
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Minecraft](https://img.shields.io/badge/Minecraft-1.21.10-brightgreen)](https://minecraft.net)
-[![Fabric API](https://img.shields.io/badge/Fabric_API-0.134.1%2B1.21.10-blue)](https://fabricmc.net)
-[![Java](https://img.shields.io/badge/Java-21-orange)](https://adoptium.net)
+[![Minecraft](https://img.shields.io/badge/Minecraft-Fabric-brightgreen)](https://fabricmc.net)
+[![Fabric API](https://img.shields.io/badge/Fabric_API-required-blue)](https://fabricmc.net)
+[![Java](https://img.shields.io/badge/Java-21%2B-orange)](https://adoptium.net)
 
 > Minecraft Fabric mod — Bring AI assistants into your game world via in-game commands.
 
