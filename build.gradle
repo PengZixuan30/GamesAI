@@ -36,6 +36,9 @@ repositories {
     mavenCentral()
 }
 
+configurations {
+}
+
 dependencies {
     // To change the versions see the gradle.properties file
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
@@ -44,8 +47,20 @@ dependencies {
 
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-    implementation "com.openai:openai-java:4.39.1"
-    include "com.openai:openai-java:4.39.1"
+    modImplementation "com.openai:openai-java:4.39.1"
+    include "com.openai:openai-java-core:4.39.1"
+    include "com.openai:openai-java-client-okhttp:4.39.1"
+    // Kotlin
+    include "org.jetbrains.kotlin:kotlin-stdlib:2.1.0"
+    include "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.1.0"
+    include "org.jetbrains.kotlin:kotlin-reflect:2.1.0"
+    // Jackson
+    include "com.fasterxml.jackson.module:jackson-module-kotlin:2.18.2"
+    include "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.18.2"
+    include "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.18.2"
+    // OkHttp
+    include "com.squareup.okhttp3:okhttp:4.12.0"
+    include "com.squareup.okio:okio-jvm:3.9.0"
 }
 
 processResources {

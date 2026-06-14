@@ -3,6 +3,7 @@ package io.github.pengzixuan30.gamesai.openai;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import com.openai.client.OpenAIClient;
@@ -31,8 +32,15 @@ public class GamesAIRequestAI {
             return Text.translatable("command.games_ai.ask.missing_config").getString();
         }
 
+        String userContent;
+        if (Objects.equals(playerName, "Server") || Objects.equals(playerName, "@")) {
+            userContent = Text.translatable("command.games_ai.ask.source.console", content).getString();
+        } else {
+            userContent = Text.translatable("command.games_ai.ask.source.player", playerName, content).getString();
+        }
+
         ChatCompletionMessageParam userMsg = ChatCompletionMessageParam.ofUser(
-            ChatCompletionUserMessageParam.builder().content(content).build()
+            ChatCompletionUserMessageParam.builder().content(userContent).build()
         );
 
         List<ChatCompletionMessageParam> history = GamesAI.getHistory(playerName, model);

@@ -10,5 +10,8 @@
   "command.games_ai.ask.missing_config": "§cMissing AI configuration!§r",
   "command.games_ai.ask.empty_reply": "§7(AI returned empty content)§r",
   "command.games_ai.ask.failed": "§cAI request failed: %s§r",
-  "command.games_ai.ask.exception": "§cAI request exception: %s§r"
+  "command.games_ai.ask.exception": "§cAI request exception: %s§r",
+
+  "command.games_ai.ask.source.console": "[Console] %s",
+  "command.games_ai.ask.source.player": "[Player: %s] %s"
 }

@@ -12,6 +12,7 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
 import net.minecraft.text.ClickEvent;
+import net.minecraft.util.Formatting;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -124,6 +125,7 @@ public class GamesAICommands {
                 .append(Text.literal(config.getPrefix()))
                 .append(Text.translatable("help.games_ai.command.basic"))
                 .append(Text.literal("/ask <content>")
+                        .formatted(Formatting.GRAY)
                         .styled(style -> style
                                 .withClickEvent(new ClickEvent.SuggestCommand(
                                         "/ask "
@@ -135,6 +137,7 @@ public class GamesAICommands {
                 .append(Text.literal(config.getPrefix()))
                 .append(Text.translatable("help.games_ai.command.basic"))
                 .append(Text.literal("/ask -m <model> <content>")
+                        .formatted(Formatting.GRAY)
                         .styled(style -> style
                                 .withClickEvent(new ClickEvent.SuggestCommand(
                                         "/ask -m "
