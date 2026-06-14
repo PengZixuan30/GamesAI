@@ -42,12 +42,27 @@ public class GamesAICommands {
     private static int executeAsk(CommandContext<ServerCommandSource> ctx) {
         String content = StringArgumentType.getString(ctx, "content");
         ServerCommandSource source = ctx.getSource();
+        String playerName = source.getName();
 
-        CompletableFuture.supplyAsync(() -> askAi(content))
+        source.sendFeedback(() -> Text.translatable("command.games_ai.ask.thinking"), false);
+
+        CompletableFuture.supplyAsync(() -> askAi(playerName, content))
+            .exceptionally(ex -> {
+                GamesAI.LOGGER.error("Async AI request failed", ex);
+                return Text.translatable("command.games_ai.ask.exception", ex.getMessage()).getString();
+            })
             .thenAccept(result -> {
-                source.getServer().execute(() -> {
-                    source.sendFeedback(() -> Text.literal(result), false);
-                });
+                try {
+                    source.getServer().execute(() -> {
+                        try {
+                            source.sendFeedback(() -> Text.literal(result), false);
+                        } catch (Exception e) {
+                            GamesAI.LOGGER.error("Failed to send feedback", e);
+                        }
+                    });
+                } catch (Exception e) {
+                    GamesAI.LOGGER.error("Failed to schedule feedback on server thread", e);
+                }
             });
 
         return 1;
@@ -56,23 +71,38 @@ public class GamesAICommands {
         String model = StringArgumentType.getString(ctx, "model");
         String content = StringArgumentType.getString(ctx, "content");
         ServerCommandSource source = ctx.getSource();
+        String playerName = source.getName();
 
-        CompletableFuture.supplyAsync(() -> askModelAi(model, content))
+        source.sendFeedback(() -> Text.translatable("command.games_ai.ask.thinking_model", model), false);
+
+        CompletableFuture.supplyAsync(() -> askModelAi(playerName, model, content))
+            .exceptionally(ex -> {
+                GamesAI.LOGGER.error("Async AI request failed", ex);
+                return Text.translatable("command.games_ai.ask.exception", ex.getMessage()).getString();
+            })
             .thenAccept(result -> {
-                source.getServer().execute(() -> {
-                    source.sendFeedback(() -> Text.literal(result), false);
-                });
+                try {
+                    source.getServer().execute(() -> {
+                        try {
+                            source.sendFeedback(() -> Text.literal(result), false);
+                        } catch (Exception e) {
+                            GamesAI.LOGGER.error("Failed to send feedback", e);
+                        }
+                    });
+                } catch (Exception e) {
+                    GamesAI.LOGGER.error("Failed to schedule feedback on server thread", e);
+                }
             });
 
         return 1;
     }
 
-    public static String askAi(String content) {
+    public static String askAi(String playerName, String content) {
         String model = GamesAI.getConfig().getDefaultAi();
-        return GamesAIRequestAI.askAi(model, content);
+        return GamesAIRequestAI.askAi(playerName, model, content);
     }
 
-    public static String askModelAi(String model, String content) {
-        return GamesAIRequestAI.askAi(model, content);
+    public static String askModelAi(String playerName, String model, String content) {
+        return GamesAIRequestAI.askAi(playerName, model, content);
     }
 }

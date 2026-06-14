@@ -1,0 +1,9 @@
+{
+  "command.games_ai.ask.thinking": "§7AI is thinking...§r",
+  "command.games_ai.ask.thinking_model": "§7AI is thinking (model: %s)...§r",
+  "command.games_ai.ask.empty": "§cPlease enter your question.§r",
+  "command.games_ai.ask.missing_config": "§cMissing AI configuration!§r",
+  "command.games_ai.ask.empty_reply": "§7(AI returned empty content)§r",
+  "command.games_ai.ask.failed": "§cAI request failed: %s§r",
+  "command.games_ai.ask.exception": "§cAI request exception: %s§r"
+}

@@ -7,6 +7,9 @@ import java.util.Map;
 
 public class GamesAIConfig {
 
+    @SerializedName("max_history")
+    private int maxHistory = 10;
+
     @SerializedName("all_ai")
     private Map<String, AiProfile> allAi = new HashMap<>();
 
@@ -56,11 +59,18 @@ public class GamesAIConfig {
         return defaultAi;
     }
 
+    public int getMaxHistory() {
+        return maxHistory;
+    }
+
     public void setAllAi(Map<String, AiProfile> allAi) {
         this.allAi = allAi;
     }
 
     public void setDefaultAi(String defaultAi) {
         this.defaultAi = defaultAi;
+    }
+    public void setMaxHistory(int maxHistory) {
+        this.maxHistory = maxHistory;
     }
 }

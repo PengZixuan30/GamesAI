@@ -7,6 +7,9 @@
 # Gradle build folder
 build
 
+# VS Code Java extension output
+bin
+
 # IntelliJ
 out/
 .idea
