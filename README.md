@@ -7,6 +7,8 @@
 
 > Minecraft Fabric mod — Bring AI assistants into your game world via in-game commands.
 
+🌐 **English** | [简体中文](README.zh-CN.md)
+
 ---
 
 ## Features
