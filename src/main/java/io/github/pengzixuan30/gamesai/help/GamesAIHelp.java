@@ -29,7 +29,7 @@ public class GamesAIHelp {
                 .append(Text.translatable("help.games_ai.basic", version)),
                     false);
 
-        if (raw.equals("/ask")) {
+        if (!raw.equals("/ask -m") && !raw.equals("/ask --model")) {
             // /ask <content>
             source.sendFeedback(() -> Text.literal("")
                             .append(Text.literal(config.getPrefix()))
