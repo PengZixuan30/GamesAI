@@ -25,6 +25,8 @@ public class GamesAI implements ModInitializer {
 
     private static final Map<String, Map<String, List<ChatCompletionMessageParam>>> allHistory = new ConcurrentHashMap<>();
 
+    private static boolean debugMode = false;
+
     @Override
     public void onInitialize() {
         LOGGER.info("GamesAI mod initializing...");
@@ -84,11 +86,22 @@ public class GamesAI implements ModInitializer {
         history.addAll(newHistory);
     }
 
-    public static void clearHistory(String playerName, String aiName) {
-        Map<String, List<ChatCompletionMessageParam>> playerMap = allHistory.get(playerName);
+    public static void clearHistory(String playerName) {
+        Map<String, List<ChatCompletionMessageParam>> playerMap = allHistory.remove(playerName);
         if (playerMap != null) {
-            List<ChatCompletionMessageParam> list = playerMap.remove(aiName);
-            if (list != null) list.clear();
+            playerMap.values().forEach(List::clear);
         }
+    }
+
+    public static void clearAllHistory() {
+        allHistory.clear();
+    }
+
+    public static void toggleDebugMode() {
+        debugMode = !debugMode;
+    }
+
+    public static boolean isDebugMode() {
+        return debugMode;
     }
 }

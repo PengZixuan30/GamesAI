@@ -1,50 +1,92 @@
 package io.github.pengzixuan30.gamesai.command;
 
+import java.util.concurrent.CompletableFuture;
+
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 
-import io.github.pengzixuan30.gamesai.config.GamesAIConfig;
-import io.github.pengzixuan30.gamesai.openai.GamesAIRequestAI;
 import io.github.pengzixuan30.gamesai.GamesAI;
+import io.github.pengzixuan30.gamesai.help.GamesAIHelp;
+import io.github.pengzixuan30.gamesai.openai.GamesAIRequestAI;
 
-import net.fabricmc.loader.api.FabricLoader;
+import static net.minecraft.server.command.CommandManager.argument;
+import static net.minecraft.server.command.CommandManager.literal;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
-import net.minecraft.text.ClickEvent;
-import net.minecraft.util.Formatting;
-
-import java.util.concurrent.CompletableFuture;
-
-import static net.minecraft.server.command.CommandManager.*;
 
 public class GamesAICommands {
 
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(
             literal("ask")
+                .requires(source -> source.isExecutedByPlayer() || source.getEntity() == null)
                 .then(literal("-m")
                     .then(argument("model", StringArgumentType.word())
                         .then(argument("content", StringArgumentType.greedyString())
                             .executes(GamesAICommands::executeModelAsk)
                         )
-                        .executes(GamesAICommands::executeHelp)
+                        .executes(GamesAIHelp::executeAskHelp)
                     )
-                    .executes(GamesAICommands::executeHelp)
+                    .executes(GamesAIHelp::executeAskHelp)
                 )
                 .then(literal("--model")
                     .then(argument("model", StringArgumentType.word())
                         .then(argument("content", StringArgumentType.greedyString())
                             .executes(GamesAICommands::executeModelAsk)
                         )
-                        .executes(GamesAICommands::executeHelp)
+                        .executes(GamesAIHelp::executeAskHelp)
                     )
-                    .executes(GamesAICommands::executeHelp)
+                    .executes(GamesAIHelp::executeAskHelp)
                 )
                 .then(argument("content", StringArgumentType.greedyString())
                     .executes(GamesAICommands::executeAsk)
                 )
-                .executes(GamesAICommands::executeHelp)
+                .executes(GamesAIHelp::executeAskHelp)
+        );
+        dispatcher.register(
+                literal("gamesai")
+                        .then(literal("history")
+                                .then(literal("clear")
+                                        .executes(ctx -> {
+                                            GamesAI.clearHistory(ctx.getSource().getName());
+                                            ctx.getSource().sendFeedback(
+                                                    () -> Text.literal(GamesAI.getConfig().getPrefix())
+                                                            .append(Text.translatable("command.games_ai.history.clear")),
+                                                    false
+                                            );
+                                            return 1;
+                                        })
+                                )
+                                .then(literal("clearall")
+                                        .requires(source -> source.hasPermissionLevel(4))
+                                        .executes(ctx -> {
+                                            GamesAI.clearAllHistory();
+                                            ctx.getSource().getServer().getPlayerManager().broadcast(
+                                                    Text.literal(GamesAI.getConfig().getPrefix())
+                                                            .append(Text.translatable("command.games_ai.history.clearall")),
+                                                    false);
+                                            return 1;
+                                        })
+                                )
+                                .executes(GamesAIHelp::executeGamesAIHelp)
+                        )
+                        .then(literal("debug")
+                                .executes(ctx -> {
+                                    GamesAI.toggleDebugMode();
+                                    boolean status = GamesAI.isDebugMode();
+                                    ctx.getSource().getServer().getPlayerManager().broadcast(
+                                            Text.literal(GamesAI.getConfig().getPrefix())
+                                                    .append(Text.translatable("command.games_ai.debug.toggle", status)),
+                                            false
+                                    );
+                                    return 1;
+                                })
+                        )
+                        .then(literal("help")
+                                .executes(GamesAIHelp::executeGamesAIHelp)
+                        )
+                        .executes(GamesAIHelp::executeGamesAIHelp)
         );
     }
 
@@ -52,10 +94,11 @@ public class GamesAICommands {
         String content = StringArgumentType.getString(ctx, "content");
         ServerCommandSource source = ctx.getSource();
         String playerName = source.getName();
+        String model = GamesAI.getConfig().getDefaultAi();
 
         source.sendFeedback(() -> Text.translatable("command.games_ai.ask.thinking"), false);
 
-        CompletableFuture.supplyAsync(() -> askAi(playerName, content))
+        CompletableFuture.supplyAsync(() -> GamesAIRequestAI.askAi(playerName, model, content))
             .exceptionally(ex -> {
                 GamesAI.LOGGER.error("Async AI request failed", ex);
                 return Text.translatable("command.games_ai.ask.exception", ex.getMessage()).getString();
@@ -85,7 +128,7 @@ public class GamesAICommands {
 
         source.sendFeedback(() -> Text.translatable("command.games_ai.ask.thinking_model", model), false);
 
-        CompletableFuture.supplyAsync(() -> askModelAi(playerName, model, content))
+        CompletableFuture.supplyAsync(() -> GamesAIRequestAI.askAi(playerName, model, content))
             .exceptionally(ex -> {
                 GamesAI.LOGGER.error("Async AI request failed", ex);
                 return Text.translatable("command.games_ai.ask.exception", ex.getMessage()).getString();
@@ -105,60 +148,5 @@ public class GamesAICommands {
             });
 
         return 1;
-    }
-
-    private static int executeHelp(CommandContext<ServerCommandSource> ctx) {
-        ServerCommandSource source = ctx.getSource();
-        GamesAIConfig config = GamesAI.getConfig();
-        String version = FabricLoader.getInstance()
-            .getModContainer("games_ai")
-            .orElseThrow()
-            .getMetadata()
-            .getVersion()
-            .getFriendlyString();
-
-        source.sendFeedback(() -> Text.literal("")
-                .append(Text.literal(config.getPrefix()))
-                .append(Text.translatable("help.games_ai.basic", version)),
-                    false);
-        source.sendFeedback(() -> Text.literal("")
-                .append(Text.literal(config.getPrefix()))
-                .append(Text.translatable("help.games_ai.command.basic"))
-                .append(Text.literal("/ask <content>")
-                        .formatted(Formatting.GRAY)
-                        .styled(style -> style
-                                .withClickEvent(new ClickEvent.SuggestCommand(
-                                        "/ask "
-                                        ))
-                                ))
-                .append(Text.translatable("help.games_ai.command.ask")),
-                                false);
-        source.sendFeedback(() ->  Text.literal("")
-                .append(Text.literal(config.getPrefix()))
-                .append(Text.translatable("help.games_ai.command.basic"))
-                .append(Text.literal("/ask -m <model> <content>")
-                        .formatted(Formatting.GRAY)
-                        .styled(style -> style
-                                .withClickEvent(new ClickEvent.SuggestCommand(
-                                        "/ask -m "
-                                ))
-                        ))
-                .append(Text.translatable("help.games_ai.command.ask")),
-        false);
-        source.sendFeedback(() ->  Text.literal("")
-                .append(Text.literal(config.getPrefix()))
-                .append(Text.translatable("help.games_ai.ai.model", String.join(", ", config.getAllAi().keySet()))),
-        false);
-
-        return 1;
-    }
-
-    public static String askAi(String playerName, String content) {
-        String model = GamesAI.getConfig().getDefaultAi();
-        return GamesAIRequestAI.askAi(playerName, model, content);
-    }
-
-    public static String askModelAi(String playerName, String model, String content) {
-        return GamesAIRequestAI.askAi(playerName, model, content);
     }
 }

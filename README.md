@@ -247,6 +247,16 @@ Then rebuild and test. Check [fabricmc.net/develop](https://fabricmc.net/develop
 
 ---
 
+## Version Compatibility
+
+| Minecraft | Fabric Loader (min) | Yarn Mappings (min) | Fabric API (min) |
+|-----------|---------------------|---------------------|-------------------|
+| 1.21.10   | 0.17.0              | 1.21.10+build.3     | 0.134.1+1.21.10   |
+
+> More versions coming soon.
+
+---
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE).

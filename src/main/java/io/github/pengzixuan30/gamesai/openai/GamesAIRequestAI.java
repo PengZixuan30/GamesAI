@@ -17,6 +17,7 @@ import com.openai.models.chat.completions.ChatCompletionUserMessageParam;
 
 import io.github.pengzixuan30.gamesai.GamesAI;
 import io.github.pengzixuan30.gamesai.config.GamesAIConfig;
+
 import net.minecraft.text.Text;
 
 public class GamesAIRequestAI {
@@ -34,9 +35,9 @@ public class GamesAIRequestAI {
 
         String userContent;
         if (Objects.equals(playerName, "Server") || Objects.equals(playerName, "@")) {
-            userContent = Text.translatable("command.games_ai.ask.source.console", content).getString();
+            userContent = Text.translatable("ask.games_ai.ask.source.console", content).getString();
         } else {
-            userContent = Text.translatable("command.games_ai.ask.source.player", playerName, content).getString();
+            userContent = Text.translatable("ask.games_ai.ask.source.player", playerName, content).getString();
         }
 
         ChatCompletionMessageParam userMsg = ChatCompletionMessageParam.ofUser(
@@ -52,49 +53,62 @@ public class GamesAIRequestAI {
         messages.addAll(history);
         messages.add(userMsg);
 
+        if (GamesAI.isDebugMode()) {
+            StringBuilder sb = new StringBuilder("Request messages:\n");
+            for (ChatCompletionMessageParam msg : messages) {
+                String role = msg.isSystem() ? "SYSTEM" : msg.isUser() ? "USER" : msg.isAssistant() ? "ASSISTANT" : "TOOL";
+                sb.append("  [").append(role).append("] ").append(msg).append("\n");
+            }
+            GamesAI.LOGGER.info(sb.toString());
+        }
+
         OpenAIClient client = OpenAIOkHttpClient.builder()
             .apiKey(config.getApiKey())
             .baseUrl(config.getBaseUrl())
             .build();
 
-        ChatCompletionCreateParams.Builder builder = ChatCompletionCreateParams.builder()
-            .model(config.getAiModel())
-            .messages(messages);
+        while (true) {
 
-        ChatCompletionCreateParams params = builder.build();
+            ChatCompletionCreateParams.Builder builder = ChatCompletionCreateParams.builder()
+                    .model(config.getAiModel())
+                    .messages(messages);
 
-        try {
-            ChatCompletion completion = client
-                .chat()
-                .completions()
-                .create(params);
+            ChatCompletionCreateParams params = builder.build();
 
-            String reply = completion.choices().stream()
-                .flatMap(choice -> choice.message().content().stream())
-                .collect(Collectors.joining());
+            try {
+                ChatCompletion completion = client
+                        .chat()
+                        .completions()
+                        .create(params);
 
-            if (reply.isBlank()) {
-                reply = Text.translatable("command.games_ai.ask.empty_reply").getString();
+                String reply = completion.choices().stream()
+                        .flatMap(choice -> choice.message().content().stream())
+                        .collect(Collectors.joining());
+
+                if (reply.isBlank()) {
+                    reply = Text.translatable("command.games_ai.ask.empty_reply").getString();
+                }
+
+                ChatCompletionMessageParam assistantMsg = ChatCompletionMessageParam.ofAssistant(
+                        ChatCompletionAssistantMessageParam.builder().content(reply).build()
+                );
+
+                history.add(userMsg);
+                history.add(assistantMsg);
+
+                int maxLen = GamesAI.getConfig().getMaxHistory() * 2;
+                if (history.size() > maxLen) {
+                    List<ChatCompletionMessageParam> trimmed = GamesAI.safeTrimHistory(history, maxLen);
+                    GamesAI.setHistory(playerName, model, trimmed);
+                }
+
+                return config.getAiName() + reply;
+
+            } catch (Exception e) {
+                GamesAI.LOGGER.error("Failed to call OpenAI API", e);
+                return Text.translatable("command.games_ai.ask.failed", e.getMessage()).getString();
             }
 
-            ChatCompletionMessageParam assistantMsg = ChatCompletionMessageParam.ofAssistant(
-                ChatCompletionAssistantMessageParam.builder().content(reply).build()
-            );
-
-            history.add(userMsg);
-            history.add(assistantMsg);
-
-            int maxLen = GamesAI.getConfig().getMaxHistory() * 2;
-            if (history.size() > maxLen) {
-                List<ChatCompletionMessageParam> trimmed = GamesAI.safeTrimHistory(history, maxLen);
-                GamesAI.setHistory(playerName, model, trimmed);
-            }
-
-            return config.getAiName() + reply;
-
-        } catch (Exception e) {
-            GamesAI.LOGGER.error("Failed to call OpenAI API", e);
-            return Text.translatable("command.games_ai.ask.failed", e.getMessage()).getString();
         }
     }
 }
