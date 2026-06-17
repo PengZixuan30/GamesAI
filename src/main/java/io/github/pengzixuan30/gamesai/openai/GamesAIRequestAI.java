@@ -35,9 +35,9 @@ public class GamesAIRequestAI {
 
         String userContent;
         if (Objects.equals(playerName, "Server") || Objects.equals(playerName, "@")) {
-            userContent = Text.translatable("ask.games_ai.ask.source.console", content).getString();
+            userContent = "Console\nMessages content: " + content;
         } else {
-            userContent = Text.translatable("ask.games_ai.ask.source.player", playerName, content).getString();
+            userContent = "Player name: " + playerName + "\nMessages content: " + content;
         }
 
         ChatCompletionMessageParam userMsg = ChatCompletionMessageParam.ofUser(

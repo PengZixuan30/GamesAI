@@ -74,7 +74,7 @@ public class GamesAICommands {
                         .then(literal("debug")
                                 .executes(ctx -> {
                                     GamesAI.toggleDebugMode();
-                                    boolean status = GamesAI.isDebugMode();
+                                    String status = GamesAI.isDebugMode() ? "Enabled" : "Disabled";
                                     ctx.getSource().getServer().getPlayerManager().broadcast(
                                             Text.literal(GamesAI.getConfig().getPrefix())
                                                     .append(Text.translatable("command.games_ai.debug.toggle", status)),
@@ -96,7 +96,7 @@ public class GamesAICommands {
         String playerName = source.getName();
         String model = GamesAI.getConfig().getDefaultAi();
 
-        source.sendFeedback(() -> Text.translatable("command.games_ai.ask.thinking"), false);
+        source.sendFeedback(() -> Text.translatable("command.games_ai.ask.thinking", GamesAI.getConfig().getAllAi().get(model).getAiName()), false);
 
         CompletableFuture.supplyAsync(() -> GamesAIRequestAI.askAi(playerName, model, content))
             .exceptionally(ex -> {
@@ -126,7 +126,7 @@ public class GamesAICommands {
         ServerCommandSource source = ctx.getSource();
         String playerName = source.getName();
 
-        source.sendFeedback(() -> Text.translatable("command.games_ai.ask.thinking_model", model), false);
+        source.sendFeedback(() -> Text.translatable("command.games_ai.ask.thinking_model", GamesAI.getConfig().getAllAi().get(model).getAiName(), model), false);
 
         CompletableFuture.supplyAsync(() -> GamesAIRequestAI.askAi(playerName, model, content))
             .exceptionally(ex -> {

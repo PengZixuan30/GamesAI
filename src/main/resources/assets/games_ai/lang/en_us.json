@@ -7,8 +7,8 @@
   "help.games_ai.history.clearall": "Clear all player histories",
   "help.games_ai.debug.toggle": "Toggle debug mode",
 
-  "command.games_ai.ask.thinking": "§7AI is thinking...§r",
-  "command.games_ai.ask.thinking_model": "§7AI is thinking (model: %s)...§r",
+  "command.games_ai.ask.thinking": "%s§7Thinking...§r",
+  "command.games_ai.ask.thinking_model": "%s§7AI is thinking (model: %s)...§r",
   "command.games_ai.ask.empty": "§cPlease enter your question.§r",
   "command.games_ai.ask.missing_config": "§cMissing AI configuration!§r",
   "command.games_ai.ask.empty_reply": "§7(AI returned empty content)§r",
@@ -18,8 +18,5 @@
   "command.games_ai.debug.toggle": "Debug mode: %s",
 
   "command.games_ai.history.clear": "Your history cleared.",
-  "command.games_ai.history.clearall": "All history cleared.",
-
-  "ask.games_ai.ask.source.console": "[Console] %s",
-  "ask.games_ai.ask.source.player": "[Player: %s] %s"
+  "command.games_ai.history.clearall": "All history cleared."
 }

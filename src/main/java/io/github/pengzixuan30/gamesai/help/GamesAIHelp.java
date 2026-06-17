@@ -29,7 +29,7 @@ public class GamesAIHelp {
                 .append(Text.translatable("help.games_ai.basic", version)),
                     false);
 
-        if (!raw.equals("/ask -m") && !raw.equals("/ask --model")) {
+        if (!raw.contains(" -m") && !raw.contains(" --model")) {
             // /ask <content>
             source.sendFeedback(() -> Text.literal("")
                             .append(Text.literal(config.getPrefix()))
@@ -86,37 +86,38 @@ public class GamesAIHelp {
                     .append(Text.translatable("help.games_ai.basic", version)),
             false);
 
-        if (raw.equals("/gamesai history") || raw.equals("/gamesai")) {
+        // 仅在 /gamesai（无子命令）或 /gamesai history 下显示 history 帮助
+        if (!raw.contains("debug") && !raw.contains("help")) {
             // /gamesai history clear
             source.sendFeedback(() -> Text.literal("")
-                            .append(Text.literal(config.getPrefix()))
-                            .append(Text.translatable("help.games_ai.command.basic"))
-                            .append(Text.literal("/gamesai history clear")
-                                    .formatted(Formatting.GRAY)
-                                    .styled(style -> style
-                                            .withClickEvent(new ClickEvent.SuggestCommand(
-                                                    "/gamesai history clear "
-                                            )))
-                            )
-                            .append(Text.literal(" — "))
-                            .append(Text.translatable("help.games_ai.history.clear")),
-                    false);
+                    .append(Text.literal(config.getPrefix()))
+                    .append(Text.translatable("help.games_ai.command.basic"))
+                    .append(Text.literal("/gamesai history clear")
+                            .formatted(Formatting.GRAY)
+                            .styled(style -> style
+                                    .withClickEvent(new ClickEvent.SuggestCommand(
+                                            "/gamesai history clear "
+                                    )))
+                    )
+                    .append(Text.literal(" — "))
+                    .append(Text.translatable("help.games_ai.history.clear")),
+                false);
 
             if (source.hasPermissionLevel(4)) {
                 // /gamesai history clearall
                 source.sendFeedback(() -> Text.literal("")
-                                .append(Text.literal(config.getPrefix()))
-                                .append(Text.translatable("help.games_ai.command.basic"))
-                                .append(Text.literal("/gamesai history clearall")
-                                        .formatted(Formatting.GRAY)
-                                        .styled(style -> style
-                                                .withClickEvent(new ClickEvent.SuggestCommand(
-                                                        "/gamesai history clearall "
-                                                )))
-                                )
-                                .append(Text.literal(" — "))
-                                .append(Text.translatable("help.games_ai.history.clearall")),
-                        false);
+                        .append(Text.literal(config.getPrefix()))
+                        .append(Text.translatable("help.games_ai.command.basic"))
+                        .append(Text.literal("/gamesai history clearall")
+                                .formatted(Formatting.GRAY)
+                                .styled(style -> style
+                                        .withClickEvent(new ClickEvent.SuggestCommand(
+                                                "/gamesai history clearall "
+                                        )))
+                        )
+                        .append(Text.literal(" — "))
+                        .append(Text.translatable("help.games_ai.history.clearall")),
+                    false);
             }
         }
 

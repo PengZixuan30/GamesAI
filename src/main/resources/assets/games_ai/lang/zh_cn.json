@@ -7,8 +7,8 @@
   "help.games_ai.history.clearall": "清除所有玩家的历史记录",
   "help.games_ai.debug.toggle": "切换调试模式",
 
-  "command.games_ai.ask.thinking": "§7AI 思考中...§r",
-  "command.games_ai.ask.thinking_model": "§7AI 思考中（模型: %s）...§r",
+  "command.games_ai.ask.thinking": "%s§7思考中...§r",
+  "command.games_ai.ask.thinking_model": "%s§7AI 思考中（模型: %s）...§r",
   "command.games_ai.ask.empty": "§c请输入你的问题。§r",
   "command.games_ai.ask.missing_config": "§c缺失的 AI 配置!§r",
   "command.games_ai.ask.empty_reply": "§7（AI 返回了空内容）§r",
@@ -18,8 +18,5 @@
   "command.games_ai.debug.toggle": "调试模式: %s",
 
   "command.games_ai.history.clear": "已清除你的历史记录。",
-  "command.games_ai.history.clearall": "已清除所有历史记录。",
-
-  "ask.games_ai.ask.source.console": "[控制台] %s",
-  "ask.games_ai.ask.source.player": "[%s] %s"
+  "command.games_ai.history.clearall": "已清除所有历史记录。"
 }
