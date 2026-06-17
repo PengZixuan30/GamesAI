@@ -24,16 +24,14 @@ public class GamesAIHelp {
             .getFriendlyString();
 
         // 欢迎信息
-        source.sendFeedback(() -> Text.literal("")
-                .append(Text.literal(config.getPrefix()))
-                .append(Text.translatable("help.games_ai.basic", version)),
+        source.sendFeedback(() -> Text.literal(config.getPrefix()
+                + Text.translatable("help.games_ai.basic", version).getString()),
                     false);
 
         if (!raw.contains(" -m") && !raw.contains(" --model")) {
             // /ask <content>
-            source.sendFeedback(() -> Text.literal("")
-                            .append(Text.literal(config.getPrefix()))
-                            .append(Text.translatable("help.games_ai.command.basic"))
+            source.sendFeedback(() -> Text.literal(config.getPrefix()
+                            + Text.translatable("help.games_ai.command.basic").getString())
                             .append(Text.literal("/ask <content>")
                                     .formatted(Formatting.GRAY)
                                     .styled(style -> style
@@ -41,29 +39,27 @@ public class GamesAIHelp {
                                                     "/ask "
                                             ))
                                     ))
-                            .append(Text.translatable("help.games_ai.command.ask")),
+                            .append(Text.literal(Text.translatable("help.games_ai.command.ask").getString())),
                     false);
         }
 
         // /ask -m <model> <content>
-        source.sendFeedback(() -> Text.literal("")
-                .append(Text.literal(config.getPrefix()))
-                .append(Text.translatable("help.games_ai.command.basic"))
-                .append(Text.literal("/ask -m <model> <content>")
+        source.sendFeedback(() -> Text.literal(config.getPrefix()
+                        + Text.translatable("help.games_ai.command.basic").getString())
+                        .append(Text.literal("/ask -m <model> <content>")
                         .formatted(Formatting.GRAY)
                         .styled(style -> style
                                 .withClickEvent(new ClickEvent.SuggestCommand(
                                         "/ask -m "
                                 ))
                         ))
-                .append(Text.translatable("help.games_ai.command.ask")),
+                .append(Text.literal(Text.translatable("help.games_ai.command.ask").getString())),
             false);
 
         // 可用模型列表
-        source.sendFeedback(() -> Text.literal("")
-                .append(Text.literal(config.getPrefix()))
-                .append(Text.translatable("help.games_ai.ai.model",
-                    String.join(", ", config.getAllAi().keySet()))),
+        source.sendFeedback(() -> Text.literal(config.getPrefix()
+                + Text.translatable("help.games_ai.ai.model",
+                    String.join(", ", config.getAllAi().keySet())).getString()),
             false);
 
         return 1;
@@ -81,43 +77,38 @@ public class GamesAIHelp {
                 .getFriendlyString();
 
         // 欢迎信息
-        source.sendFeedback(() -> Text.literal("")
-                    .append(Text.literal(config.getPrefix()))
-                    .append(Text.translatable("help.games_ai.basic", version)),
+        source.sendFeedback(() -> Text.literal(config.getPrefix()
+                    + Text.translatable("help.games_ai.basic", version).getString()),
             false);
 
         // 仅在 /gamesai（无子命令）或 /gamesai history 下显示 history 帮助
         if (!raw.contains("debug") && !raw.contains("help")) {
             // /gamesai history clear
-            source.sendFeedback(() -> Text.literal("")
-                    .append(Text.literal(config.getPrefix()))
-                    .append(Text.translatable("help.games_ai.command.basic"))
-                    .append(Text.literal("/gamesai history clear")
-                            .formatted(Formatting.GRAY)
-                            .styled(style -> style
-                                    .withClickEvent(new ClickEvent.SuggestCommand(
-                                            "/gamesai history clear "
-                                    )))
-                    )
-                    .append(Text.literal(" — "))
-                    .append(Text.translatable("help.games_ai.history.clear")),
-                false);
+            source.sendFeedback(() -> Text.literal(config.getPrefix()
+                            + Text.translatable("help.games_ai.command.basic").getString())
+                            .append(Text.literal("/gamesai history clear")
+                                    .formatted(Formatting.GRAY)
+                                    .styled(style -> style
+                                            .withClickEvent(new ClickEvent.SuggestCommand(
+                                                    "/gamesai history clear "
+                                            )))
+                            )
+                            .append(Text.literal(" — " + Text.translatable("help.games_ai.history.clear").getString())),
+                    false);
 
             if (source.hasPermissionLevel(4)) {
                 // /gamesai history clearall
-                source.sendFeedback(() -> Text.literal("")
-                        .append(Text.literal(config.getPrefix()))
-                        .append(Text.translatable("help.games_ai.command.basic"))
-                        .append(Text.literal("/gamesai history clearall")
-                                .formatted(Formatting.GRAY)
-                                .styled(style -> style
-                                        .withClickEvent(new ClickEvent.SuggestCommand(
-                                                "/gamesai history clearall "
-                                        )))
-                        )
-                        .append(Text.literal(" — "))
-                        .append(Text.translatable("help.games_ai.history.clearall")),
-                    false);
+                source.sendFeedback(() -> Text.literal(config.getPrefix()
+                                + Text.translatable("help.games_ai.command.basic").getString())
+                                .append(Text.literal("/gamesai history clearall")
+                                        .formatted(Formatting.GRAY)
+                                        .styled(style -> style
+                                                .withClickEvent(new ClickEvent.SuggestCommand(
+                                                        "/gamesai history clearall "
+                                                )))
+                                )
+                                .append(Text.literal(" — " + Text.translatable("help.games_ai.history.clearall").getString())),
+                        false);
             }
         }
 

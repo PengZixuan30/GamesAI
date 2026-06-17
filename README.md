@@ -1,3 +1,5 @@
+<div align="center">
+
 # GamesAI
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
@@ -5,9 +7,9 @@
 [![Fabric API](https://img.shields.io/badge/Fabric_API-required-blue)](https://fabricmc.net)
 [![Java](https://img.shields.io/badge/Java-21%2B-orange)](https://adoptium.net)
 
-> Minecraft Fabric mod — Bring AI assistants into your game world via in-game commands.
+**English** | [简体中文](README.zh-CN.md)
 
-🌐 **English** | [简体中文](README.zh-CN.md)
+</div>
 
 ---
 
@@ -168,21 +170,6 @@ flowchart LR
 
 ---
 
-## Dependencies
-
-| Dependency | Version | Purpose |
-|------------|---------|---------|
-| Minecraft | 1.21.10 | Game platform |
-| Fabric Loader | 0.17.0 | Mod loader |
-| Fabric API | 0.134.1+1.21.10 | Fabric hooks & utilities |
-| Yarn Mappings | 1.21.10+build.3 | Deobfuscation mappings |
-| Fabric Loom | 1.16-SNAPSHOT | Gradle build plugin |
-| [openai-java](https://github.com/openai/openai-java) | 4.39.1 | OpenAI API client |
-| GSON | *(transitive)* | JSON parsing |
-| SLF4J | *(transitive)* | Logging |
-
----
-
 ## Building
 
 ### Prerequisites
@@ -215,15 +202,6 @@ build/libs/games_ai-1.0.0-SNAPSHOT-1.jar
 ```
 
 ---
-
-## Version Compatibility
-
-| Minecraft | Fabric Loader (min) | Fabric API | Status |
-|-----------|---------------------|------------|--------|
-| 1.21.10   | 0.17.0              | 0.134.1+   | ✅ Current |
-| 1.21.11+  | 0.17.0+             | 0.138.4+   | ⚠️ Untested |
-
-> For newer Minecraft versions (≥ 1.21.5 / 26.x), note that `yarn_mappings` is **no longer required** — Fabric Loom directly uses Mojang's official mappings.
 
 ### Quick Version Migration
 

@@ -1,3 +1,5 @@
+<div align="center">
+
 # GamesAI
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
@@ -5,9 +7,9 @@
 [![Fabric API](https://img.shields.io/badge/Fabric_API-required-blue)](https://fabricmc.net)
 [![Java](https://img.shields.io/badge/Java-21%2B-orange)](https://adoptium.net)
 
-> Minecraft Fabric 模组 —— 在游戏中与 AI 对话
+[English](README.md) | **简体中文**
 
-🌐 [English](README.md) | **简体中文**
+</div>
 
 ---
 
