@@ -16,6 +16,7 @@ import com.openai.models.chat.completions.ChatCompletionSystemMessageParam;
 import com.openai.models.chat.completions.ChatCompletionUserMessageParam;
 
 import io.github.pengzixuan30.gamesai.GamesAI;
+import io.github.pengzixuan30.gamesai.translations.GamesAITranslations;
 import io.github.pengzixuan30.gamesai.config.GamesAIConfig;
 
 import net.minecraft.text.Text;
@@ -23,14 +24,14 @@ import net.minecraft.text.Text;
 public class GamesAIRequestAI {
     public static String askAi(String playerName, String model, String content) {
         if (content == null || content.isBlank()) {
-            return Text.translatable("command.games_ai.ask.empty").getString();
+            return GamesAITranslations.tr("command.games_ai.ask.empty");
         }
 
         Map<String, GamesAIConfig.AiProfile> map = GamesAI.getConfig().getAllAi();
         GamesAIConfig.AiProfile config = map.get(model);
 
         if (config == null) {
-            return Text.translatable("command.games_ai.ask.missing_config").getString();
+            return GamesAITranslations.tr("command.games_ai.ask.missing_config");
         }
 
         String userContent;
@@ -86,7 +87,7 @@ public class GamesAIRequestAI {
                         .collect(Collectors.joining());
 
                 if (reply.isBlank()) {
-                    reply = Text.translatable("command.games_ai.ask.empty_reply").getString();
+                    reply = GamesAITranslations.tr("command.games_ai.ask.empty_reply");
                 }
 
                 ChatCompletionMessageParam assistantMsg = ChatCompletionMessageParam.ofAssistant(
@@ -106,7 +107,7 @@ public class GamesAIRequestAI {
 
             } catch (Exception e) {
                 GamesAI.LOGGER.error("Failed to call OpenAI API", e);
-                return Text.translatable("command.games_ai.ask.failed", e.getMessage()).getString();
+                return GamesAITranslations.tr("command.games_ai.ask.failed", e.getMessage());
             }
 
         }

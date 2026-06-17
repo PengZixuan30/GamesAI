@@ -6,6 +6,7 @@ import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import io.github.pengzixuan30.gamesai.command.GamesAICommands;
 import io.github.pengzixuan30.gamesai.config.GamesAIConfig;
 import io.github.pengzixuan30.gamesai.config.GamesAIConfigManager;
+import io.github.pengzixuan30.gamesai.translations.GamesAITranslations;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +33,7 @@ public class GamesAI implements ModInitializer {
         LOGGER.info("GamesAI mod initializing...");
 
         config = GamesAIConfigManager.loadConfig();
+        GamesAITranslations.init(config.getLang());
 
         if (config.getAllAi().isEmpty()) {
             LOGGER.warn("OpenAI API Key is empty!");

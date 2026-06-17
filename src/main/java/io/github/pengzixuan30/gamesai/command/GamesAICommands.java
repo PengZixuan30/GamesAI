@@ -1,12 +1,15 @@
 package io.github.pengzixuan30.gamesai.command;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.logging.Logger;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 
 import io.github.pengzixuan30.gamesai.GamesAI;
+import io.github.pengzixuan30.gamesai.config.GamesAIConfig;
+import io.github.pengzixuan30.gamesai.translations.GamesAITranslations;
 import io.github.pengzixuan30.gamesai.help.GamesAIHelp;
 import io.github.pengzixuan30.gamesai.openai.GamesAIRequestAI;
 
@@ -52,7 +55,7 @@ public class GamesAICommands {
                                             GamesAI.clearHistory(ctx.getSource().getName());
                                             ctx.getSource().sendFeedback(
                                                     () -> Text.literal(GamesAI.getConfig().getPrefix()
-                                                        + Text.translatable("command.games_ai.history.clear").getString()),
+                                                        + GamesAITranslations.tr("command.games_ai.history.clear")),
                                                     false
                                             );
                                             return 1;
@@ -62,9 +65,10 @@ public class GamesAICommands {
                                         .requires(source -> source.hasPermissionLevel(4))
                                         .executes(ctx -> {
                                             GamesAI.clearAllHistory();
+                                            GamesAI.LOGGER.info("Clear all history");
                                             ctx.getSource().getServer().getPlayerManager().broadcast(
                                                     Text.literal(GamesAI.getConfig().getPrefix()
-                                                        + Text.translatable("command.games_ai.history.clearall").getString()),
+                                                        + GamesAITranslations.tr("command.games_ai.history.clearall")),
                                                     false);
                                             return 1;
                                         })
@@ -75,9 +79,10 @@ public class GamesAICommands {
                                 .executes(ctx -> {
                                     GamesAI.toggleDebugMode();
                                     String status = GamesAI.isDebugMode() ? "Enabled" : "Disabled";
+                                    GamesAI.LOGGER.info("Debug mode is {}", status);
                                     ctx.getSource().getServer().getPlayerManager().broadcast(
                                             Text.literal(GamesAI.getConfig().getPrefix()
-                                                    + Text.translatable("command.games_ai.debug.toggle", status).getString()),
+                                                    + GamesAITranslations.tr("command.games_ai.debug.toggle", status)),
                                             false
                                     );
                                     return 1;
@@ -85,6 +90,31 @@ public class GamesAICommands {
                         )
                         .then(literal("help")
                                 .executes(GamesAIHelp::executeGamesAIHelp)
+                        )
+                        .then(literal("reload")
+                                .requires(source -> source.hasPermissionLevel(4))
+                                .executes(ctx -> {
+                                    GamesAITranslations.reloadTranslations();
+                                    String lang = GamesAI.getConfig().getLang();
+                                    GamesAI.LOGGER.info("Reload languages: {}", lang);
+                                    ctx.getSource().getServer().getPlayerManager().broadcast(
+                                            Text.literal(GamesAI.getConfig().getPrefix()
+                                                    + GamesAITranslations.tr("command.games_ai.reload", lang)),
+                                            false
+                                    );
+                                    return 1;
+                                })
+                        )
+                        .then(literal("config")
+                                .requires(source -> source.hasPermissionLevel(4))
+                                .then(literal("lang")
+                                        .then(literal("en_us")
+                                                .executes(ctx -> {
+                                                    GamesAI.getConfig().setLang("en_us");
+                                                    return 1;
+                                                })
+                                        )
+                                )
                         )
                         .executes(GamesAIHelp::executeGamesAIHelp)
         );
@@ -96,12 +126,12 @@ public class GamesAICommands {
         String playerName = source.getName();
         String model = GamesAI.getConfig().getDefaultAi();
 
-        source.sendFeedback(() -> Text.literal(Text.translatable("command.games_ai.ask.thinking", GamesAI.getConfig().getAllAi().get(model).getAiName()).getString()), false);
+        source.sendFeedback(() -> Text.literal(GamesAITranslations.tr("command.games_ai.ask.thinking", GamesAI.getConfig().getAllAi().get(model).getAiName())), false);
 
         CompletableFuture.supplyAsync(() -> GamesAIRequestAI.askAi(playerName, model, content))
             .exceptionally(ex -> {
                 GamesAI.LOGGER.error("Async AI request failed", ex);
-                return Text.translatable("command.games_ai.ask.exception", ex.getMessage()).getString();
+                return GamesAITranslations.tr("command.games_ai.ask.exception", ex.getMessage());
             })
             .thenAccept(result -> {
                 try {
@@ -126,12 +156,12 @@ public class GamesAICommands {
         ServerCommandSource source = ctx.getSource();
         String playerName = source.getName();
 
-        source.sendFeedback(() -> Text.literal(Text.translatable("command.games_ai.ask.thinking_model", GamesAI.getConfig().getAllAi().get(model).getAiName(), model).getString()), false);
+        source.sendFeedback(() -> Text.literal(GamesAITranslations.tr("command.games_ai.ask.thinking_model", GamesAI.getConfig().getAllAi().get(model).getAiName(), model)), false);
 
         CompletableFuture.supplyAsync(() -> GamesAIRequestAI.askAi(playerName, model, content))
             .exceptionally(ex -> {
                 GamesAI.LOGGER.error("Async AI request failed", ex);
-                return Text.translatable("command.games_ai.ask.exception", ex.getMessage()).getString();
+                return GamesAITranslations.tr("command.games_ai.ask.exception", ex.getMessage());
             })
             .thenAccept(result -> {
                 try {

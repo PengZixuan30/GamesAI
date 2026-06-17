@@ -18,5 +18,7 @@
   "command.games_ai.debug.toggle": "Debug mode: %s",
 
   "command.games_ai.history.clear": "Your history cleared.",
-  "command.games_ai.history.clearall": "All history cleared."
+  "command.games_ai.history.clearall": "All history cleared.",
+
+  "command.games_ai.reload": "§aLanguage reloaded: %s§r"
 }

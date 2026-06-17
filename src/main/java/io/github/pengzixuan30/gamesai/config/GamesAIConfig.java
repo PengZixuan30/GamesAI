@@ -13,6 +13,9 @@ public class GamesAIConfig {
     @SerializedName("max_history")
     private int maxHistory = 10;
 
+    @SerializedName("lang")
+    private String lang = "en_us";
+
     @SerializedName("all_ai")
     private Map<String, AiProfile> allAi = new HashMap<>();
 
@@ -70,6 +73,10 @@ public class GamesAIConfig {
         return prefix;
     }
 
+    public String getLang() {
+        return lang;
+    }
+
     public void setAllAi(Map<String, AiProfile> allAi) {
         this.allAi = allAi;
     }
@@ -84,5 +91,9 @@ public class GamesAIConfig {
 
     public void setPrefix(String prefix) {
         this.prefix = prefix;
+    }
+
+    public void setLang(String lang) {
+        this.lang = lang;
     }
 }

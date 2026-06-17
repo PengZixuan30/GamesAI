@@ -18,5 +18,7 @@
   "command.games_ai.debug.toggle": "调试模式: %s",
 
   "command.games_ai.history.clear": "已清除你的历史记录。",
-  "command.games_ai.history.clearall": "已清除所有历史记录。"
+  "command.games_ai.history.clearall": "已清除所有历史记录。",
+
+  "command.games_ai.reload": "§a已重新加载语言: %s§r"
 }
