@@ -21,6 +21,10 @@
 - **Async execution** — AI requests run off the main thread, never freezing the server
 - **Compatible with any OpenAI-compatible API** — Works with OpenAI, local LLMs (Ollama / LM Studio), or self-hosted endpoints
 - **Auto-generated config** — First run creates a default `config/games_ai/config.json`, no manual setup needed
+- **Multi-language support** — Server-wide language switching (en_us / zh_cn), live reload without restart
+- **Conversation history** — Per-player, per-model history with configurable length and auto-trimming
+- **Context-sensitive help** — `/gamesai help` adapts to your current command context
+- **Debug mode** — Toggle request logging for troubleshooting API issues
 
 ---
 
@@ -47,6 +51,21 @@
 /ask -m deepseek-v3 Write a haiku about creepers
 ```
 
+### Management Commands
+
+| Command | Permission | Description |
+|---------|-----------|-------------|
+| `/gamesai help` | Everyone | Show context-sensitive help |
+| `/gamesai history clear` | Everyone | Clear your own conversation history |
+| `/gamesai debug` | Everyone | Toggle debug mode (request logging) |
+| `/gamesai history clearall` | Owner (Lv4) | Clear all players' history |
+| `/gamesai reload` | Owner (Lv4) | Reload language files from disk |
+| `/gamesai config lang <lang>` | Owner (Lv4) | Set server language (en_us / zh_cn) |
+| `/gamesai config defaultAi <aiID>` | Owner (Lv4) | Set default AI model profile |
+| `/gamesai config maxHistory <value>` | Owner (Lv4) | Set max conversation rounds (≥ 1) |
+
+> 💡 Type `/gamesai help` in-game for clickable command suggestions.
+
 ---
 
 ## Configuration
@@ -61,6 +80,9 @@ On first run, a default config is created at:
 
 ```json
 {
+  "prefix": "[GamesAI]",
+  "max_history": 10,
+  "lang": "en_us",
   "all_ai": {
     "example_ai": {
       "prompt": "You are a helpful assistant in Minecraft.",
@@ -80,6 +102,7 @@ On first run, a default config is created at:
 {
   "prefix": "[GamesAI]",
   "max_history": 10,
+  "lang": "en_us",
   "all_ai": {
     "gpt4o": {
       "prompt": "You are a Minecraft expert.",
@@ -221,7 +244,6 @@ Then rebuild and test. Check [fabricmc.net/develop](https://fabricmc.net/develop
 
 ## Server Notes
 
-- **Permission:** Add `.requires(source -> source.hasPermissionLevel(2))` to restrict `/ask` to admins on public servers
 - **History is in-memory only** — server restart clears all conversations
 - **API costs** — each `/ask` makes one HTTP request to the configured endpoint
 

@@ -21,6 +21,10 @@
 - **异步请求** —— AI 思考时不卡服
 - **兼容任意 OpenAI 兼容 API** —— 支持 OpenAI、本地 LLM（Ollama / LM Studio）、自建服务
 - **自动生成配置** —— 首次运行自动创建 `config/games_ai/config.json`
+- **多语言支持** —— 全服语言切换（en_us / zh_cn），热重载无需重启
+- **对话历史** —— 按玩家、按模型维护历史，可配置长度，自动裁剪
+- **上下文帮助** —— `/gamesai help` 根据当前命令上下文显示相关帮助
+- **调试模式** —— 切换请求日志，排查 API 问题
 
 ---
 
@@ -47,6 +51,21 @@
 /ask -m deepseek-v3 写一首关于爬行者的俳句
 ```
 
+### 管理指令
+
+| 指令 | 权限 | 说明 |
+|------|------|------|
+| `/gamesai help` | 所有人 | 显示上下文相关帮助 |
+| `/gamesai history clear` | 所有人 | 清除自己的对话历史 |
+| `/gamesai debug` | 所有人 | 切换调试模式（请求日志） |
+| `/gamesai history clearall` | 所有者（Lv4） | 清除所有玩家历史 |
+| `/gamesai reload` | 所有者（Lv4） | 从磁盘重新加载语言文件 |
+| `/gamesai config lang <语言>` | 所有者（Lv4） | 设置服务器语言（en_us / zh_cn） |
+| `/gamesai config defaultAi <aiID>` | 所有者（Lv4） | 设置默认 AI 模型 |
+| `/gamesai config maxHistory <值>` | 所有者（Lv4） | 设置最大对话轮数（≥ 1） |
+
+> 💡 在游戏中输入 `/gamesai help` 可查看带点击补全的命令帮助。
+
 ---
 
 ## 配置
@@ -61,6 +80,9 @@
 
 ```json
 {
+  "prefix": "[GamesAI]",
+  "max_history": 10,
+  "lang": "en_us",
   "all_ai": {
     "example_ai": {
       "prompt": "你是一个有用的 Minecraft 助手。",
@@ -80,6 +102,7 @@
 {
   "prefix": "[GamesAI]",
   "max_history": 10,
+  "lang": "en_us",
   "all_ai": {
     "gpt4o": {
       "prompt": "你是一个 Minecraft 专家。",
@@ -202,7 +225,6 @@ cd GamesAI
 
 ## 服务端注意事项
 
-- **权限：** 建议添加 `.requires(source -> source.hasPermissionLevel(2))` 限制 `/ask` 仅管理员可用
 - **历史仅存内存** —— 服务端重启后全部清空
 - **API 费用** —— 每次 `/ask` 向配置的端点发送一次 HTTP 请求
 
