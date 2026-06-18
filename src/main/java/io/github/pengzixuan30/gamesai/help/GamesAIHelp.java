@@ -36,7 +36,7 @@ public class GamesAIHelp {
                             .append(Text.literal("/ask <content>")
                                     .formatted(Formatting.GRAY)
                                     .styled(style -> style
-                                            .withClickEvent(new ClickEvent.SuggestCommand(
+                                            .withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND,
                                                     "/ask "
                                             ))
                                     ))
@@ -50,7 +50,7 @@ public class GamesAIHelp {
                         .append(Text.literal("/ask -m <model> <content>")
                         .formatted(Formatting.GRAY)
                         .styled(style -> style
-                                .withClickEvent(new ClickEvent.SuggestCommand(
+                                .withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND,
                                         "/ask -m "
                                 ))
                         ))
@@ -130,7 +130,7 @@ public class GamesAIHelp {
                         .append(Text.literal(command)
                                 .formatted(Formatting.GRAY)
                                 .styled(style -> style
-                                        .withClickEvent(new ClickEvent.SuggestCommand(
+                                        .withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND,
                                                 suggestText + " "
                                         )))
                         )
