@@ -1,18 +1,16 @@
 package io.github.pengzixuan30.gamesai.command;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.logging.Logger;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 
 import io.github.pengzixuan30.gamesai.GamesAI;
-import io.github.pengzixuan30.gamesai.config.GamesAIConfig;
-import io.github.pengzixuan30.gamesai.translations.GamesAITranslations;
+import io.github.pengzixuan30.gamesai.config.GamesAIConfigManager;
 import io.github.pengzixuan30.gamesai.help.GamesAIHelp;
 import io.github.pengzixuan30.gamesai.openai.GamesAIRequestAI;
-
+import io.github.pengzixuan30.gamesai.translations.GamesAITranslations;
 import static net.minecraft.server.command.CommandManager.argument;
 import static net.minecraft.server.command.CommandManager.literal;
 import net.minecraft.server.command.ServerCommandSource;
@@ -26,6 +24,12 @@ public class GamesAICommands {
                 .requires(source -> source.isExecutedByPlayer() || source.getEntity() == null)
                 .then(literal("-m")
                     .then(argument("model", StringArgumentType.word())
+                        .suggests((ctx, builder) -> {
+                            for (String id : GamesAI.getConfig().getAllAi().keySet()) {
+                                builder.suggest(id);
+                            }
+                            return builder.buildFuture();
+                        })
                         .then(argument("content", StringArgumentType.greedyString())
                             .executes(GamesAICommands::executeModelAsk)
                         )
@@ -35,6 +39,12 @@ public class GamesAICommands {
                 )
                 .then(literal("--model")
                     .then(argument("model", StringArgumentType.word())
+                        .suggests((ctx, builder) -> {
+                            for (String id : GamesAI.getConfig().getAllAi().keySet()) {
+                                builder.suggest(id);
+                            }
+                            return builder.buildFuture();
+                        })
                         .then(argument("content", StringArgumentType.greedyString())
                             .executes(GamesAICommands::executeModelAsk)
                         )
@@ -108,13 +118,111 @@ public class GamesAICommands {
                         .then(literal("config")
                                 .requires(source -> source.hasPermissionLevel(4))
                                 .then(literal("lang")
-                                        .then(literal("en_us")
+                                        .then(argument("lang", StringArgumentType.word())
+                                                .suggests((ctx, builder) -> {
+                                                    builder.suggest("en_us");
+                                                    builder.suggest("zh_cn");
+                                                    return builder.buildFuture();
+                                                })
                                                 .executes(ctx -> {
-                                                    GamesAI.getConfig().setLang("en_us");
+                                                    String lang = StringArgumentType.getString(ctx, "lang");
+                                                    String path = "/assets/games_ai/lang/" + lang + ".json";
+                                                    boolean exists;
+                                                    try (var in = GamesAITranslations.class.getResourceAsStream(path)) {
+                                                        exists = in != null;
+                                                    } catch (Exception ignored) {
+                                                        exists = false;
+                                                    }
+                                                    if (!exists) {
+                                                        ctx.getSource().sendFeedback(() ->
+                                                            Text.literal(GamesAI.getConfig().getPrefix()
+                                                                    + GamesAITranslations.tr("command.games_ai.lang.notfound", lang)),
+                                                            false
+                                                        );
+                                                        return 0;
+                                                    }
+                                                    GamesAI.getConfig().setLang(lang);
+                                                    GamesAIConfigManager.saveConfig(GamesAI.getConfig());
+                                                    GamesAITranslations.reloadTranslations();
+                                                    GamesAI.LOGGER.info("Language config has been set: {}", lang);
+                                                    ctx.getSource().getServer().getPlayerManager().broadcast(
+                                                            Text.literal(GamesAI.getConfig().getPrefix()
+                                                                    + GamesAITranslations.tr("command.games_ai.lang.set", lang)),
+                                                            false
+                                                    );
                                                     return 1;
                                                 })
                                         )
+                                        .executes(GamesAIHelp::executeGamesAIHelp)
                                 )
+                                .then(literal("defaultAi")
+                                        .then(argument("aiID", StringArgumentType.word())
+                                                .suggests((ctx, builder) -> {
+                                                    for (String id : GamesAI.getConfig().getAllAi().keySet()) {
+                                                        builder.suggest(id);
+                                                    }
+                                                    return builder.buildFuture();
+                                                })
+                                                .executes(ctx -> {
+                                                    String aiID = StringArgumentType.getString(ctx, "aiID");
+                                                    if (!GamesAI.getConfig().getAllAi().containsKey(aiID)) {
+                                                        ctx.getSource().sendFeedback(() ->
+                                                            Text.literal(GamesAI.getConfig().getPrefix()
+                                                                    + GamesAITranslations.tr("command.games_ai.default_ai.notfound", aiID)),
+                                                            false
+                                                        );
+                                                        return 0;
+                                                    }
+                                                    GamesAI.getConfig().setDefaultAi(aiID);
+                                                    GamesAIConfigManager.saveConfig(GamesAI.getConfig());
+                                                    GamesAI.LOGGER.info("Default AI changed to: {}", aiID);
+                                                    ctx.getSource().getServer().getPlayerManager().broadcast(
+                                                            Text.literal(GamesAI.getConfig().getPrefix()
+                                                                    + GamesAITranslations.tr("command.games_ai.default_ai.set", aiID)),
+                                                            false
+                                                    );
+                                                    return 1;
+                                                })
+                                        )
+                                        .executes(GamesAIHelp::executeGamesAIHelp)
+                                )
+                                .then(literal("maxHistory")
+                                        .then(argument("value", StringArgumentType.word())
+                                                .executes(ctx -> {
+                                                    String valueStr = StringArgumentType.getString(ctx, "value");
+                                                    int value;
+                                                    try {
+                                                        value = Integer.parseInt(valueStr);
+                                                    } catch (NumberFormatException e) {
+                                                        ctx.getSource().sendFeedback(() ->
+                                                            Text.literal(GamesAI.getConfig().getPrefix()
+                                                                    + GamesAITranslations.tr("command.games_ai.max_history.invalid", valueStr)),
+                                                            false
+                                                        );
+                                                        return 0;
+                                                    }
+                                                    if (value < 1) {
+                                                        ctx.getSource().sendFeedback(() ->
+                                                            Text.literal(GamesAI.getConfig().getPrefix()
+                                                                    + GamesAITranslations.tr("command.games_ai.max_history.invalid", valueStr)),
+                                                            false
+                                                        );
+                                                        return 0;
+                                                    }
+                                                    GamesAI.getConfig().setMaxHistory(value);
+                                                    GamesAIConfigManager.saveConfig(GamesAI.getConfig());
+                                                    GamesAI.LOGGER.info("Max history changed to: {}", value);
+                                                    ctx.getSource().getServer().getPlayerManager().broadcast(
+                                                            Text.literal(GamesAI.getConfig().getPrefix()
+                                                                    + GamesAITranslations.tr("command.games_ai.max_history.set", value)),
+                                                            false
+                                                    );
+                                                    return 1;
+                                                })
+                                        )
+                                        .executes(GamesAIHelp::executeGamesAIHelp)
+                                )
+                                .executes(GamesAIHelp::executeGamesAIHelp)
                         )
                         .executes(GamesAIHelp::executeGamesAIHelp)
         );

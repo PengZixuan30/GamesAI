@@ -6,6 +6,7 @@ import com.google.gson.reflect.TypeToken;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -17,8 +18,13 @@ public class GamesAITranslations {
 
     public static void init(String language) {
         String path = "/assets/games_ai/lang/" + language + ".json";
-        try (Reader reader = new InputStreamReader(
-                GamesAITranslations.class.getResourceAsStream(path))) {
+        var in = GamesAITranslations.class.getResourceAsStream(path);
+        if (in == null) {
+            GamesAI.LOGGER.warn("Language file not found: {}", path);
+            if (!"en_us".equals(language)) init("en_us");
+            return;
+        }
+        try (Reader reader = new InputStreamReader(in, StandardCharsets.UTF_8)) {
             Type type = new TypeToken<Map<String, String>>() {}.getType();
             map.clear();
             map.putAll(new Gson().fromJson(reader, type));

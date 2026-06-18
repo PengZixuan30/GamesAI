@@ -3,8 +3,8 @@ package io.github.pengzixuan30.gamesai.help;
 import com.mojang.brigadier.context.CommandContext;
 
 import io.github.pengzixuan30.gamesai.GamesAI;
-import io.github.pengzixuan30.gamesai.translations.GamesAITranslations;
 import io.github.pengzixuan30.gamesai.config.GamesAIConfig;
+import io.github.pengzixuan30.gamesai.translations.GamesAITranslations;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.ClickEvent;
@@ -68,7 +68,6 @@ public class GamesAIHelp {
 
     public static int executeGamesAIHelp(CommandContext<ServerCommandSource> ctx) {
         ServerCommandSource source = ctx.getSource();
-        String raw = ctx.getInput();
         GamesAIConfig config = GamesAI.getConfig();
         String version = FabricLoader.getInstance()
                 .getModContainer("games_ai")
@@ -77,42 +76,65 @@ public class GamesAIHelp {
                 .getVersion()
                 .getFriendlyString();
 
+        // 解析输入确定当前子命令上下文
+        // 输入格式: "/gamesai [sub] [subsub] ..."
+        String raw = ctx.getInput().trim();
+        // 去掉开头的 "/"
+        if (raw.startsWith("/")) raw = raw.substring(1);
+        String[] parts = raw.split("\\s+");
+        // parts[0] = "gamesai", parts[1] = 一级子命令, parts[2] = 二级子命令
+        String subCommand = parts.length > 1 ? parts[1] : "";
+
         // 欢迎信息
         source.sendFeedback(() -> Text.literal(config.getPrefix()
                     + GamesAITranslations.tr("help.games_ai.basic", version)),
             false);
 
-        // 仅在 /gamesai（无子命令）或 /gamesai history 下显示 history 帮助
-        if (!raw.contains("debug") && !raw.contains("help")) {
-            // /gamesai history clear
-            source.sendFeedback(() -> Text.literal(config.getPrefix()
-                            + GamesAITranslations.tr("help.games_ai.command.basic"))
-                            .append(Text.literal("/gamesai history clear")
-                                    .formatted(Formatting.GRAY)
-                                    .styled(style -> style
-                                            .withClickEvent(new ClickEvent.SuggestCommand(
-                                                    "/gamesai history clear "
-                                            )))
-                            )
-                            .append(Text.literal(" — " + GamesAITranslations.tr("help.games_ai.history.clear"))),
-                    false);
-
+        if ("config".equals(subCommand)) {
+            // ── /gamesai config ── 只显示 config 子命令
             if (source.hasPermissionLevel(4)) {
-                // /gamesai history clearall
-                source.sendFeedback(() -> Text.literal(config.getPrefix()
-                                + GamesAITranslations.tr("help.games_ai.command.basic"))
-                                .append(Text.literal("/gamesai history clearall")
-                                        .formatted(Formatting.GRAY)
-                                        .styled(style -> style
-                                                .withClickEvent(new ClickEvent.SuggestCommand(
-                                                        "/gamesai history clearall "
-                                                )))
-                                )
-                                .append(Text.literal(" — " + GamesAITranslations.tr("help.games_ai.history.clearall"))),
-                        false);
+                sendHelpLine(source, "/gamesai config lang <lang>", "help.games_ai.config.lang");
+                sendHelpLine(source, "/gamesai config defaultAi <aiID>", "help.games_ai.config.default_ai");
+                sendHelpLine(source, "/gamesai config maxHistory <value>", "help.games_ai.config.max_history");
+            }
+        } else if ("history".equals(subCommand)) {
+            // ── /gamesai history ── 只显示 history 子命令
+            sendHelpLine(source, "/gamesai history clear", "help.games_ai.history.clear");
+            if (source.hasPermissionLevel(4)) {
+                sendHelpLine(source, "/gamesai history clearall", "help.games_ai.history.clearall");
+            }
+        } else {
+            // ── /gamesai（顶层）── 显示所有一级子命令
+            // 所有用户
+            sendHelpLine(source, "/gamesai history", "help.games_ai.history");
+            sendHelpLine(source, "/gamesai debug", "help.games_ai.debug.toggle");
+            sendHelpLine(source, "/gamesai help", "help.games_ai.help");
+
+            // Lv4 管理员
+            if (source.hasPermissionLevel(4)) {
+                sendHelpLine(source, "/gamesai reload", "help.games_ai.reload");
+                sendHelpLine(source, "/gamesai config", "help.games_ai.config");
             }
         }
 
         return 1;
+    }
+
+    private static void sendHelpLine(ServerCommandSource source, String command, String descriptionKey) {
+        GamesAIConfig config = GamesAI.getConfig();
+        // 点击建议去掉占位符部分（如 "<lang>"），只保留命令前缀
+        int bracketIdx = command.indexOf(" <");
+        String suggestText = bracketIdx > 0 ? command.substring(0, bracketIdx) : command;
+        source.sendFeedback(() -> Text.literal(config.getPrefix()
+                        + GamesAITranslations.tr("help.games_ai.command.basic"))
+                        .append(Text.literal(command)
+                                .formatted(Formatting.GRAY)
+                                .styled(style -> style
+                                        .withClickEvent(new ClickEvent.SuggestCommand(
+                                                suggestText + " "
+                                        )))
+                        )
+                        .append(Text.literal(" — " + GamesAITranslations.tr(descriptionKey))),
+                false);
     }
 }

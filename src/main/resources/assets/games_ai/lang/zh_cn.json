@@ -3,9 +3,16 @@
   "help.games_ai.command.basic": "输入",
   "help.games_ai.command.ask": "以向AI提问",
   "help.games_ai.ai.model": "当前有以下AI模型: %s",
+  "help.games_ai.history": "管理对话历史",
   "help.games_ai.history.clear": "清除你的历史记录",
   "help.games_ai.history.clearall": "清除所有玩家的历史记录",
   "help.games_ai.debug.toggle": "切换调试模式",
+  "help.games_ai.reload": "重新加载语言文件",
+  "help.games_ai.config": "管理模组配置",
+  "help.games_ai.config.lang": "设置服务器语言",
+  "help.games_ai.config.default_ai": "设置默认 AI 模型",
+  "help.games_ai.config.max_history": "设置最大对话历史数",
+  "help.games_ai.help": "显示此帮助",
 
   "command.games_ai.ask.thinking": "%s§7思考中...§r",
   "command.games_ai.ask.thinking_model": "%s§7AI 思考中（模型: %s）...§r",
@@ -20,5 +27,15 @@
   "command.games_ai.history.clear": "已清除你的历史记录。",
   "command.games_ai.history.clearall": "已清除所有历史记录。",
 
-  "command.games_ai.reload": "§a已重新加载语言: %s§r"
+  "command.games_ai.reload": "§a已重新加载语言: %s§r",
+
+  "command.games_ai.lang.set": "§a语言已设置为: %s§r",
+
+  "command.games_ai.lang.notfound": "§c未找到语言文件: %s§r",
+
+  "command.games_ai.default_ai.set": "§a默认 AI 已切换为: %s§r",
+  "command.games_ai.default_ai.notfound": "§c未找到 AI 配置: %s§r",
+
+  "command.games_ai.max_history.set": "§a最大历史记录已改为: %d§r",
+  "command.games_ai.max_history.invalid": "§c无效的最大历史值: %s（必须 ≥ 1）§r"
 }

@@ -124,16 +124,20 @@ src/
 ├── main/java/io/github/pengzixuan30/gamesai/
 │   ├── GamesAI.java                  # Mod entry point — init & config loading
 │   ├── command/
-│   │   └── GamesAICommands.java      # /ask command registration & execution
+│   │   └── GamesAICommands.java      # Command registration & execution
 │   ├── config/
 │   │   ├── GamesAIConfig.java        # Config data model (AI profiles)
 │   │   └── GamesAIConfigManager.java # Config file read/write (JSON)
-│   └── openai/
-│       └── GamesAIRequestAI.java     # OpenAI API client & response handling
+│   ├── help/
+│   │   └── GamesAIHelp.java          # Context-sensitive help system
+│   ├── openai/
+│   │   └── GamesAIRequestAI.java     # OpenAI API client & response handling
+│   └── translations/
+│       └── GamesAITranslations.java  # I18n translation engine (JSON + GSON)
 ├── main/resources/
 │   ├── fabric.mod.json               # Fabric mod metadata
 │   ├── assets/games_ai/icon.png      # Mod icon (optional)
-│   └── assets/games_ai/lang/         # Translation files
+│   └── assets/games_ai/lang/         # Translation files (en_us, zh_cn, ...)
 ├── client/java/io/github/pengzixuan30/gamesai/client/
 │   └── GamesAIClient.java            # Client-side entry (placeholder)
 ├── build.gradle                      # Gradle build configuration
@@ -162,11 +166,13 @@ flowchart LR
 
 | Class | Responsibility |
 |-------|---------------|
-| `GamesAI` | Mod lifecycle, config, `allHistory` CRUD, `safeTrimHistory` |
-| `GamesAICommands` | Command tree (`/ask`, `/ask -m`, help), async dispatch with `CompletableFuture` |
-| `GamesAIConfig` | Data model: `prefix`, `max_history`, `all_ai` profiles, `default_ai` |
-| `GamesAIConfigManager` | GSON serialization, file I/O to `config/games_ai/config.json` |
+| `GamesAI` | Mod lifecycle, config, `allHistory` CRUD, `safeTrimHistory`, debug mode |
+| `GamesAICommands` | Command tree (`/ask`, `/gamesai`), async dispatch with `CompletableFuture` |
+| `GamesAIConfig` | Data model: `prefix`, `max_history`, `lang`, `all_ai` profiles, `default_ai` |
+| `GamesAIConfigManager` | GSON serialization, file I/O to `config/games_ai/config.json` (UTF-8) |
+| `GamesAIHelp` | Context-sensitive help: `/gamesai` → top-level, `/gamesai config` → subcommands only |
 | `GamesAIRequestAI` | OpenAI SDK client, builds messages (`system → history → user`), manages history writes |
+| `GamesAITranslations` | I18n engine: loads JSON from `assets/games_ai/lang/`, UTF-8, live reload support |
 
 ---
 
@@ -188,11 +194,7 @@ cd GamesAI
 ./gradlew build
 ```
 
-The compiled `.jar` will be at:
-
-```
-build/libs/games_ai-1.0.0-SNAPSHOT-1.jar
-```
+The compiled `.jar` will be at: `build/libs/games_ai-0.1.1-Fabric-xxx.jar`
 
 ### Run in Dev Environment
 
@@ -229,7 +231,13 @@ Then rebuild and test. Check [fabricmc.net/develop](https://fabricmc.net/develop
 
 | Minecraft | Fabric Loader (min) | Yarn Mappings (min) | Fabric API (min) |
 |-----------|---------------------|---------------------|-------------------|
-| 1.21.10   | 0.17.0              | 1.21.10+build.3     | 0.134.1+1.21.10   |
+| 1.21.10   | 0.17.0              | 1.21.10+build.3     | 0.134.1+1.21.10  |
+| 1.21.9    | 0.17.0              | 1.21.9+build.1      | 0.133.14+1.21.9  |
+| 1.21.8    | 0.16.13             | 1.21.8+build.1      | 0.129.0+1.21.8   |
+| 1.21.7    | 0.16.13             | 1.21.7+build.8      | 0.128.1+1.21.7   |
+| 1.21.6    | 0.16.13             | 1.21.6+build.1      | 0.127.0+1.21.6   |
+| 1.21.5    | 0.16.10             | 1.21.5+build.1      | 0.119.5+1.21.5   |
+| 1.21.4    | 0.16.9              | 1.21.4+build.8      | 0.110.5+1.21.4   |
 
 > More versions coming soon.
 

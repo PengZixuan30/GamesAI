@@ -124,15 +124,19 @@ src/
 ├── main/java/io/github/pengzixuan30/gamesai/
 │   ├── GamesAI.java                  # 模组入口 —— 初始化 & 配置加载
 │   ├── command/
-│   │   └── GamesAICommands.java      # /ask 指令注册 & 执行
+│   │   └── GamesAICommands.java      # 指令注册 & 执行
 │   ├── config/
 │   │   ├── GamesAIConfig.java        # 配置数据模型
 │   │   └── GamesAIConfigManager.java # JSON 读写
-│   └── openai/
-│       └── GamesAIRequestAI.java     # OpenAI API 客户端
+│   ├── help/
+│   │   └── GamesAIHelp.java          # 上下文相关帮助系统
+│   ├── openai/
+│   │   └── GamesAIRequestAI.java     # OpenAI API 客户端
+│   └── translations/
+│       └── GamesAITranslations.java  # 国际化翻译引擎 (JSON + GSON)
 ├── main/resources/
 │   ├── fabric.mod.json               # Fabric 模组元数据
-│   └── assets/games_ai/lang/         # 翻译文件
+│   └── assets/games_ai/lang/         # 翻译文件 (en_us, zh_cn, ...)
 ├── client/                           # 客户端入口（占位）
 ├── build.gradle
 ├── gradle.properties
@@ -160,11 +164,13 @@ flowchart LR
 
 | 类 | 职责 |
 |----|------|
-| `GamesAI` | 模组生命周期、配置、`allHistory` 增删改查、`safeTrimHistory` |
-| `GamesAICommands` | 指令树（`/ask`、`/ask -m`、帮助）、`CompletableFuture` 异步调度 |
-| `GamesAIConfig` | 数据模型：`prefix`、`max_history`、`all_ai` 配置列表、`default_ai` |
-| `GamesAIConfigManager` | GSON 序列化，文件读写 `config/games_ai/config.json` |
+| `GamesAI` | 模组生命周期、配置、`allHistory` 增删改查、`safeTrimHistory`、调试模式 |
+| `GamesAICommands` | 指令树（`/ask`、`/gamesai`）、`CompletableFuture` 异步调度 |
+| `GamesAIConfig` | 数据模型：`prefix`、`max_history`、`lang`、`all_ai` 配置列表、`default_ai` |
+| `GamesAIConfigManager` | GSON 序列化，文件读写 `config/games_ai/config.json`（UTF-8） |
+| `GamesAIHelp` | 上下文相关帮助：`/gamesai` → 顶层，`/gamesai config` → 仅显示子命令 |
 | `GamesAIRequestAI` | OpenAI SDK 客户端，构建消息（`system → history → user`），管理历史写入 |
+| `GamesAITranslations` | 国际化引擎：加载 `assets/games_ai/lang/` 下 JSON，UTF-8 编码，支持热重载 |
 
 ---
 
@@ -183,7 +189,7 @@ cd GamesAI
 ./gradlew build
 ```
 
-产物：`build/libs/games_ai-1.0.0-SNAPSHOT-1.jar`
+产物：`build/libs/games_ai-0.1.1-Fabric-xxx.jar`
 
 ### 开发环境
 
@@ -206,7 +212,13 @@ cd GamesAI
 
 | Minecraft | Fabric Loader（最低） | Yarn Mappings（最低） | Fabric API（最低） |
 |-----------|----------------------|-----------------------|--------------------|
-| 1.21.10   | 0.17.0               | 1.21.10+build.3       | 0.134.1+1.21.10    |
+| 1.21.10   | 0.17.0               | 1.21.10+build.3       | 0.134.1+1.21.10   |
+| 1.21.9    | 0.17.0               | 1.21.9+build.1        | 0.133.14+1.21.9   |
+| 1.21.8    | 0.16.13              | 1.21.8+build.1        | 0.129.0+1.21.8    |
+| 1.21.7    | 0.16.13              | 1.21.7+build.8        | 0.128.1+1.21.7    |
+| 1.21.6    | 0.16.13              | 1.21.6+build.1        | 0.127.0+1.21.6    |
+| 1.21.5    | 0.16.10              | 1.21.5+build.1        | 0.119.5+1.21.5    |
+| 1.21.4    | 0.16.9               | 1.21.4+build.8        | 0.110.5+1.21.4    |
 
 > 更多版本即将添加。
 

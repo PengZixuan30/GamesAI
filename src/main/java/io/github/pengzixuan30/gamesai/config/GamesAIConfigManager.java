@@ -5,6 +5,7 @@ import java.io.Reader;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.charset.StandardCharsets;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,7 +53,7 @@ public class GamesAIConfigManager {
         Path configPath = getConfigPath();
         try {
             Files.createDirectories(configPath.getParent());
-            try (Writer writer = Files.newBufferedWriter(configPath)) {
+            try (Writer writer = Files.newBufferedWriter(configPath, StandardCharsets.UTF_8)) {
                 GSON.toJson(config, writer);
             }
             LOGGER.info("Saved config to {}", configPath);
@@ -62,7 +63,7 @@ public class GamesAIConfigManager {
     }
 
     private static GamesAIConfig readFromFile(Path path) {
-        try (Reader reader = Files.newBufferedReader(path)) {
+        try (Reader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
             return GSON.fromJson(reader, GamesAIConfig.class);
         } catch (IOException e) {
             LOGGER.error("Failed to read config file", e);

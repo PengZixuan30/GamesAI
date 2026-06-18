@@ -3,9 +3,16 @@
   "help.games_ai.command.basic": "Type ",
   "help.games_ai.command.ask": " to ask AI",
   "help.games_ai.ai.model": "Available AI models: %s",
+  "help.games_ai.history": "Manage conversation history",
   "help.games_ai.history.clear": "Clear your history",
   "help.games_ai.history.clearall": "Clear all player histories",
   "help.games_ai.debug.toggle": "Toggle debug mode",
+  "help.games_ai.reload": "Reload language files",
+  "help.games_ai.config": "Manage mod configuration",
+  "help.games_ai.config.lang": "Set server language",
+  "help.games_ai.config.default_ai": "Set default AI model",
+  "help.games_ai.config.max_history": "Set max conversation history length",
+  "help.games_ai.help": "Show this help",
 
   "command.games_ai.ask.thinking": "%s§7Thinking...§r",
   "command.games_ai.ask.thinking_model": "%s§7AI is thinking (model: %s)...§r",
@@ -20,5 +27,11 @@
   "command.games_ai.history.clear": "Your history cleared.",
   "command.games_ai.history.clearall": "All history cleared.",
 
-  "command.games_ai.reload": "§aLanguage reloaded: %s§r"
+  "command.games_ai.reload": "§aLanguage reloaded: %s§r",
+  "command.games_ai.lang.set": "§aLanguage set to: %s§r",
+  "command.games_ai.lang.notfound": "§cLanguage file not found: %s§r",
+  "command.games_ai.default_ai.set": "§aDefault AI changed to: %s§r",
+  "command.games_ai.default_ai.notfound": "§cAI profile not found: %s§r",
+  "command.games_ai.max_history.set": "§aMax history changed to: %d§r",
+  "command.games_ai.max_history.invalid": "§cInvalid max history value: %s (must be ≥ 1)§r"
 }
