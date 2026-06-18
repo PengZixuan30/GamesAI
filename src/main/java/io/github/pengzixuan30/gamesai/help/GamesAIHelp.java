@@ -6,6 +6,7 @@ import io.github.pengzixuan30.gamesai.GamesAI;
 import io.github.pengzixuan30.gamesai.config.GamesAIConfig;
 import io.github.pengzixuan30.gamesai.translations.GamesAITranslations;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.server.permissions.Permissions;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.Text;
@@ -36,7 +37,7 @@ public class GamesAIHelp {
                             .append(Text.literal("/ask <content>")
                                     .formatted(Formatting.GRAY)
                                     .styled(style -> style
-                                            .withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND,
+                                            .withClickEvent(new ClickEvent.SuggestCommand(
                                                     "/ask "
                                             ))
                                     ))
@@ -50,7 +51,7 @@ public class GamesAIHelp {
                         .append(Text.literal("/ask -m <model> <content>")
                         .formatted(Formatting.GRAY)
                         .styled(style -> style
-                                .withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND,
+                                .withClickEvent(new ClickEvent.SuggestCommand(
                                         "/ask -m "
                                 ))
                         ))
@@ -92,7 +93,7 @@ public class GamesAIHelp {
 
         if ("config".equals(subCommand)) {
             // ── /gamesai config ── 只显示 config 子命令
-            if (source.hasPermissionLevel(4)) {
+            if (source.hasPermission(Permissions.COMMANDS_OWNER)) {
                 sendHelpLine(source, "/gamesai config lang <lang>", "help.games_ai.config.lang");
                 sendHelpLine(source, "/gamesai config defaultAi <aiID>", "help.games_ai.config.default_ai");
                 sendHelpLine(source, "/gamesai config maxHistory <value>", "help.games_ai.config.max_history");
@@ -100,7 +101,7 @@ public class GamesAIHelp {
         } else if ("history".equals(subCommand)) {
             // ── /gamesai history ── 只显示 history 子命令
             sendHelpLine(source, "/gamesai history clear", "help.games_ai.history.clear");
-            if (source.hasPermissionLevel(4)) {
+            if (source.hasPermission(Permissions.COMMANDS_OWNER)) {
                 sendHelpLine(source, "/gamesai history clearall", "help.games_ai.history.clearall");
             }
         } else {
@@ -111,7 +112,7 @@ public class GamesAIHelp {
             sendHelpLine(source, "/gamesai help", "help.games_ai.help");
 
             // Lv4 管理员
-            if (source.hasPermissionLevel(4)) {
+            if (source.hasPermission(Permissions.COMMANDS_OWNER)) {
                 sendHelpLine(source, "/gamesai reload", "help.games_ai.reload");
                 sendHelpLine(source, "/gamesai config", "help.games_ai.config");
             }
@@ -130,7 +131,7 @@ public class GamesAIHelp {
                         .append(Text.literal(command)
                                 .formatted(Formatting.GRAY)
                                 .styled(style -> style
-                                        .withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND,
+                                        .withClickEvent(new ClickEvent.SuggestCommand(
                                                 suggestText + " "
                                         )))
                         )
