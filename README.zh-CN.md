@@ -259,6 +259,7 @@ cd GamesAI
 
 ## 致谢
 
+- [DA100](https://github.com/DA100102) —— 为本模组设计 Logo
 - [FabricMC](https://fabricmc.net) —— 模组框架
 - [openai/openai-java](https://github.com/openai/openai-java) —— OpenAI 官方 Java 库
 - Minecraft 是 Mojang / Microsoft 的商标。本模组与 Mojang 无关。

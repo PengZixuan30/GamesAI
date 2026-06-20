@@ -278,6 +278,7 @@ This project is licensed under the [MIT License](LICENSE).
 
 ## Acknowledgements
 
+- [DA100](https://github.com/DA100102) — Logo design for this mod
 - [FabricMC](https://fabricmc.net) — Modding framework
 - [openai/openai-java](https://github.com/openai/openai-java) — The official Java library for the OpenAI API
 - Minecraft is a trademark of Mojang / Microsoft. This mod is not affiliated with Mojang.
