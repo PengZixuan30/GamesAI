@@ -272,7 +272,8 @@ Then rebuild and test. Check [fabricmc.net/develop](https://fabricmc.net/develop
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+- **Source code** is licensed under the MIT License – see the [LICENSE](./LICENSE) file for details.
+- **Logo and visual assets** are proprietary and all rights are reserved by **冬天衣服不错**. You may view and share them for personal, non‑commercial use, but any modification or commercial use requires prior written permission.
 
 ---
 
