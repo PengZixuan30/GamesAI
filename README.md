@@ -253,6 +253,7 @@ Then rebuild and test. Check [fabricmc.net/develop](https://fabricmc.net/develop
 
 | Minecraft | Fabric Loader (min) | Yarn Mappings (min) | Fabric API (min) |
 |-----------|---------------------|---------------------|-------------------|
+| 26.1      | 0.18.4              | -                    | 0.144.0+26.1     |
 | 1.21.11   | 0.17.3              | 1.21.11+build.6     | 0.139.4+1.21.11  |
 | 1.21.10   | 0.17.0              | 1.21.10+build.3     | 0.134.1+1.21.10  |
 | 1.21.9    | 0.17.0              | 1.21.9+build.1      | 0.133.14+1.21.9  |

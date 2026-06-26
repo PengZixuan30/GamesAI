@@ -14,7 +14,7 @@ import io.github.pengzixuan30.gamesai.translations.GamesAITranslations;
 import static net.minecraft.server.command.CommandManager.argument;
 import static net.minecraft.server.command.CommandManager.literal;
 
-import net.minecraft.server.permissions.Permissions;
+import net.minecraft.command.DefaultPermissions;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
 
@@ -74,7 +74,7 @@ public class GamesAICommands {
                                         })
                                 )
                                 .then(literal("clearall")
-                                        .requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_OWNER))
+                                        .requires(source -> source.getPermissions().hasPermission(DefaultPermissions.OWNERS))
                                         .executes(ctx -> {
                                             GamesAI.clearAllHistory();
                                             GamesAI.LOGGER.info("Clear all history");
@@ -104,7 +104,7 @@ public class GamesAICommands {
                                 .executes(GamesAIHelp::executeGamesAIHelp)
                         )
                         .then(literal("reload")
-                                .requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_OWNER))
+                                .requires(source -> source.getPermissions().hasPermission(DefaultPermissions.OWNERS))
                                 .executes(ctx -> {
                                     GamesAITranslations.reloadTranslations();
                                     String lang = GamesAI.getConfig().getLang();
@@ -118,7 +118,7 @@ public class GamesAICommands {
                                 })
                         )
                         .then(literal("config")
-                                .requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_OWNER))
+                                .requires(source -> source.getPermissions().hasPermission(DefaultPermissions.OWNERS))
                                 .then(literal("lang")
                                         .then(argument("lang", StringArgumentType.word())
                                                 .suggests((ctx, builder) -> {
