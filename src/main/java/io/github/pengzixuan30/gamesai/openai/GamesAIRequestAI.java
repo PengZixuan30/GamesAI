@@ -19,7 +19,8 @@ import io.github.pengzixuan30.gamesai.GamesAI;
 import io.github.pengzixuan30.gamesai.translations.GamesAITranslations;
 import io.github.pengzixuan30.gamesai.config.GamesAIConfig;
 
-import net.minecraft.text.Text;
+//import net.minecraft.text.Text;
+//import net.minecraft.network.chat.Component;
 
 public class GamesAIRequestAI {
     public static String askAi(String playerName, String model, String content) {

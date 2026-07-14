@@ -11,19 +11,29 @@ import io.github.pengzixuan30.gamesai.config.GamesAIConfigManager;
 import io.github.pengzixuan30.gamesai.help.GamesAIHelp;
 import io.github.pengzixuan30.gamesai.openai.GamesAIRequestAI;
 import io.github.pengzixuan30.gamesai.translations.GamesAITranslations;
-import static net.minecraft.server.command.CommandManager.argument;
-import static net.minecraft.server.command.CommandManager.literal;
 
-import net.minecraft.command.DefaultPermissions;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.text.Text;
+import static net.minecraft.commands.Commands.literal;
+import static net.minecraft.commands.Commands.argument;
+//import static com.mojang.brigadier.builder.LiteralArgumentBuilder.literal;
+//import static com.mojang.brigadier.builder.RequiredArgumentBuilder.argument;
+//import static net.minecraft.server.command.CommandManager.argument;
+
+//import net.minecraft.command.DefaultPermissions;
+import net.minecraft.server.permissions.Permissions;
+
+import net.minecraft.commands.CommandSourceStack;
+// import net.minecraft.server.command.ServerCommandSource;
+
+//import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
 
 public class GamesAICommands {
 
-    public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
+    // dispatcher: CommandDispatcher<ServerCommandSource>
+    public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(
             literal("ask")
-                .requires(source -> source.isExecutedByPlayer() || source.getEntity() == null)
+                //.requires(source -> source.isExecutedByPlayer() || source.getEntity() == null)
                 .then(literal("-m")
                     .then(argument("model", StringArgumentType.word())
                         .suggests((ctx, builder) -> {
@@ -64,9 +74,9 @@ public class GamesAICommands {
                         .then(literal("history")
                                 .then(literal("clear")
                                         .executes(ctx -> {
-                                            GamesAI.clearHistory(ctx.getSource().getName());
-                                            ctx.getSource().sendFeedback(
-                                                    () -> Text.literal(GamesAI.getConfig().getPrefix()
+                                            GamesAI.clearHistory(ctx.getSource().getTextName());
+                                            ctx.getSource().sendSuccess(
+                                                    () -> Component.literal(GamesAI.getConfig().getPrefix()
                                                         + GamesAITranslations.tr("command.games_ai.history.clear")),
                                                     false
                                             );
@@ -74,12 +84,14 @@ public class GamesAICommands {
                                         })
                                 )
                                 .then(literal("clearall")
-                                        .requires(source -> source.getPermissions().hasPermission(DefaultPermissions.OWNERS))
+                                        // source -> source.getPermissions().hasPermission(DefaultPermissions.OWNERS)
+                                        .requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_OWNER))
                                         .executes(ctx -> {
                                             GamesAI.clearAllHistory();
                                             GamesAI.LOGGER.info("Clear all history");
-                                            ctx.getSource().getServer().getPlayerManager().broadcast(
-                                                    Text.literal(GamesAI.getConfig().getPrefix()
+                                            //ctx.getSource().getServer().getPlayerManager().broadcast
+                                            ctx.getSource().getServer().getPlayerList().broadcastSystemMessage(
+                                                    Component.literal(GamesAI.getConfig().getPrefix()
                                                         + GamesAITranslations.tr("command.games_ai.history.clearall")),
                                                     false);
                                             return 1;
@@ -92,8 +104,8 @@ public class GamesAICommands {
                                     GamesAI.toggleDebugMode();
                                     String status = GamesAI.isDebugMode() ? "Enabled" : "Disabled";
                                     GamesAI.LOGGER.info("Debug mode is {}", status);
-                                    ctx.getSource().getServer().getPlayerManager().broadcast(
-                                            Text.literal(GamesAI.getConfig().getPrefix()
+                                    ctx.getSource().getServer().getPlayerList().broadcastSystemMessage(
+                                            Component.literal(GamesAI.getConfig().getPrefix()
                                                     + GamesAITranslations.tr("command.games_ai.debug.toggle", status)),
                                             false
                                     );
@@ -104,13 +116,13 @@ public class GamesAICommands {
                                 .executes(GamesAIHelp::executeGamesAIHelp)
                         )
                         .then(literal("reload")
-                                .requires(source -> source.getPermissions().hasPermission(DefaultPermissions.OWNERS))
+                                .requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_OWNER))
                                 .executes(ctx -> {
                                     GamesAITranslations.reloadTranslations();
                                     String lang = GamesAI.getConfig().getLang();
                                     GamesAI.LOGGER.info("Reload languages: {}", lang);
-                                    ctx.getSource().getServer().getPlayerManager().broadcast(
-                                            Text.literal(GamesAI.getConfig().getPrefix()
+                                    ctx.getSource().getServer().getPlayerList().broadcastSystemMessage(
+                                            Component.literal(GamesAI.getConfig().getPrefix()
                                                     + GamesAITranslations.tr("command.games_ai.reload", lang)),
                                             false
                                     );
@@ -118,7 +130,7 @@ public class GamesAICommands {
                                 })
                         )
                         .then(literal("config")
-                                .requires(source -> source.getPermissions().hasPermission(DefaultPermissions.OWNERS))
+                                .requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_OWNER))
                                 .then(literal("lang")
                                         .then(argument("lang", StringArgumentType.word())
                                                 .suggests((ctx, builder) -> {
@@ -136,8 +148,8 @@ public class GamesAICommands {
                                                         exists = false;
                                                     }
                                                     if (!exists) {
-                                                        ctx.getSource().sendFeedback(() ->
-                                                            Text.literal(GamesAI.getConfig().getPrefix()
+                                                        ctx.getSource().sendSuccess(() ->
+                                                            Component.literal(GamesAI.getConfig().getPrefix()
                                                                     + GamesAITranslations.tr("command.games_ai.lang.notfound", lang)),
                                                             false
                                                         );
@@ -147,8 +159,8 @@ public class GamesAICommands {
                                                     GamesAIConfigManager.saveConfig(GamesAI.getConfig());
                                                     GamesAITranslations.reloadTranslations();
                                                     GamesAI.LOGGER.info("Language config has been set: {}", lang);
-                                                    ctx.getSource().getServer().getPlayerManager().broadcast(
-                                                            Text.literal(GamesAI.getConfig().getPrefix()
+                                                    ctx.getSource().getServer().getPlayerList().broadcastSystemMessage(
+                                                            Component.literal(GamesAI.getConfig().getPrefix()
                                                                     + GamesAITranslations.tr("command.games_ai.lang.set", lang)),
                                                             false
                                                     );
@@ -168,8 +180,8 @@ public class GamesAICommands {
                                                 .executes(ctx -> {
                                                     String aiID = StringArgumentType.getString(ctx, "aiID");
                                                     if (!GamesAI.getConfig().getAllAi().containsKey(aiID)) {
-                                                        ctx.getSource().sendFeedback(() ->
-                                                            Text.literal(GamesAI.getConfig().getPrefix()
+                                                        ctx.getSource().sendSuccess(() ->
+                                                            Component.literal(GamesAI.getConfig().getPrefix()
                                                                     + GamesAITranslations.tr("command.games_ai.default_ai.notfound", aiID)),
                                                             false
                                                         );
@@ -178,8 +190,8 @@ public class GamesAICommands {
                                                     GamesAI.getConfig().setDefaultAi(aiID);
                                                     GamesAIConfigManager.saveConfig(GamesAI.getConfig());
                                                     GamesAI.LOGGER.info("Default AI changed to: {}", aiID);
-                                                    ctx.getSource().getServer().getPlayerManager().broadcast(
-                                                            Text.literal(GamesAI.getConfig().getPrefix()
+                                                    ctx.getSource().getServer().getPlayerList().broadcastSystemMessage(
+                                                            Component.literal(GamesAI.getConfig().getPrefix()
                                                                     + GamesAITranslations.tr("command.games_ai.default_ai.set", aiID)),
                                                             false
                                                     );
@@ -196,16 +208,16 @@ public class GamesAICommands {
                                                     try {
                                                         value = Integer.parseInt(valueStr);
                                                     } catch (NumberFormatException e) {
-                                                        ctx.getSource().sendFeedback(() ->
-                                                            Text.literal(GamesAI.getConfig().getPrefix()
+                                                        ctx.getSource().sendSuccess(() ->
+                                                            Component.literal(GamesAI.getConfig().getPrefix()
                                                                     + GamesAITranslations.tr("command.games_ai.max_history.invalid", valueStr)),
                                                             false
                                                         );
                                                         return 0;
                                                     }
                                                     if (value < 1) {
-                                                        ctx.getSource().sendFeedback(() ->
-                                                            Text.literal(GamesAI.getConfig().getPrefix()
+                                                        ctx.getSource().sendSuccess(() ->
+                                                            Component.literal(GamesAI.getConfig().getPrefix()
                                                                     + GamesAITranslations.tr("command.games_ai.max_history.invalid", valueStr)),
                                                             false
                                                         );
@@ -214,8 +226,8 @@ public class GamesAICommands {
                                                     GamesAI.getConfig().setMaxHistory(value);
                                                     GamesAIConfigManager.saveConfig(GamesAI.getConfig());
                                                     GamesAI.LOGGER.info("Max history changed to: {}", value);
-                                                    ctx.getSource().getServer().getPlayerManager().broadcast(
-                                                            Text.literal(GamesAI.getConfig().getPrefix()
+                                                    ctx.getSource().getServer().getPlayerList().broadcastSystemMessage(
+                                                            Component.literal(GamesAI.getConfig().getPrefix()
                                                                     + GamesAITranslations.tr("command.games_ai.max_history.set", value)),
                                                             false
                                                     );
@@ -230,13 +242,13 @@ public class GamesAICommands {
         );
     }
 
-    private static int executeAsk(CommandContext<ServerCommandSource> ctx) {
+    private static int executeAsk(CommandContext<CommandSourceStack> ctx) {
         String content = StringArgumentType.getString(ctx, "content");
-        ServerCommandSource source = ctx.getSource();
-        String playerName = source.getName();
+        CommandSourceStack source = ctx.getSource();
+        String playerName = source.getTextName();
         String model = GamesAI.getConfig().getDefaultAi();
 
-        source.sendFeedback(() -> Text.literal(GamesAITranslations.tr("command.games_ai.ask.thinking", GamesAI.getConfig().getAllAi().get(model).getAiName())), false);
+        source.sendSuccess(() -> Component.literal(GamesAITranslations.tr("command.games_ai.ask.thinking", GamesAI.getConfig().getAllAi().get(model).getAiName())), false);
 
         CompletableFuture.supplyAsync(() -> GamesAIRequestAI.askAi(playerName, model, content))
             .exceptionally(ex -> {
@@ -247,7 +259,7 @@ public class GamesAICommands {
                 try {
                     source.getServer().execute(() -> {
                         try {
-                            source.sendFeedback(() -> Text.literal(result), false);
+                            source.sendSuccess(() -> Component.literal(result), false);
                         } catch (Exception e) {
                             GamesAI.LOGGER.error("Failed to send feedback", e);
                         }
@@ -260,13 +272,18 @@ public class GamesAICommands {
         return 1;
     }
 
-    private static int executeModelAsk(CommandContext<ServerCommandSource> ctx) {
+    //CommandContext<ServerCommandSource>
+    private static int executeModelAsk(CommandContext<CommandSourceStack> ctx) {
         String model = StringArgumentType.getString(ctx, "model");
         String content = StringArgumentType.getString(ctx, "content");
-        ServerCommandSource source = ctx.getSource();
-        String playerName = source.getName();
+        //ServerCommandSource
+        CommandSourceStack source = ctx.getSource();
+        //getName
+        String playerName = source.getTextName();
 
-        source.sendFeedback(() -> Text.literal(GamesAITranslations.tr("command.games_ai.ask.thinking_model", GamesAI.getConfig().getAllAi().get(model).getAiName(), model)), false);
+        //Text.literal
+        //sendFeedback
+        source.sendSuccess(() -> Component.literal(GamesAITranslations.tr("command.games_ai.ask.thinking_model", GamesAI.getConfig().getAllAi().get(model).getAiName(), model)), false);
 
         CompletableFuture.supplyAsync(() -> GamesAIRequestAI.askAi(playerName, model, content))
             .exceptionally(ex -> {
@@ -277,7 +294,7 @@ public class GamesAICommands {
                 try {
                     source.getServer().execute(() -> {
                         try {
-                            source.sendFeedback(() -> Text.literal(result), false);
+                            source.sendSuccess(() -> Component.literal(result), false);
                         } catch (Exception e) {
                             GamesAI.LOGGER.error("Failed to send feedback", e);
                         }
