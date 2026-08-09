@@ -34,42 +34,18 @@ public class GamesAIHelp {
             .getVersion()
             .getFriendlyString();
 
-        // 欢迎信息
         source.sendSuccess(() -> Component.literal(config.getPrefix()
                 + GamesAITranslations.tr("help.games_ai.basic", version)),
                     false);
 
-        if (!raw.contains(" -m") && !raw.contains(" --model")) {
-            // /ask <content>
-            source.sendSuccess(() -> Component.literal(config.getPrefix()
-                            + GamesAITranslations.tr("help.games_ai.command.basic"))
-                            .append(Component.literal("/ask <content>")
-                                    //.formatted
-                                    .withStyle(ChatFormatting.GRAY)
-                                    //.styled
-                                    .withStyle(style -> style
-                                            .withClickEvent(new ClickEvent.SuggestCommand(
-                                                    "/ask "
-                                            ))
-                                    ))
-                            .append(Component.literal(GamesAITranslations.tr("help.games_ai.command.ask"))),
-                    false);
+        if (!raw.contains(" -m") && !raw.contains(" -n")) {
+            sendHelpLine(source, "/ask <content>", "help.games_ai.command.ask");
         }
 
-        // /ask -m <model> <content>
-        source.sendSuccess(() -> Component.literal(config.getPrefix()
-                        + GamesAITranslations.tr("help.games_ai.command.basic"))
-                        .append(Component.literal("/ask -m <model> <content>")
-                            .withStyle(ChatFormatting.GRAY)
-                            .withStyle(style -> style
-                                    .withClickEvent(new ClickEvent.SuggestCommand(
-                                            "/ask -m "
-                                    ))
-                            ))
-                        .append(Component.literal(GamesAITranslations.tr("help.games_ai.command.ask"))),
-            false);
+        sendHelpLine(source, "/ask -m <model> <content>", "help.games_ai.command.ask");
+        sendHelpLine(source, "/ask -n <content>", "help.games_ai.command.ask.n");
+        sendHelpLine(source, "/ask -n -m <model> <content>", "help.games_ai.command.ask.n");
 
-        // 可用模型列表
         source.sendSuccess(() -> Component.literal(config.getPrefix()
                 + GamesAITranslations.tr("help.games_ai.ai.model",
                     String.join(", ", config.getAllAi().keySet()))),
@@ -88,44 +64,48 @@ public class GamesAIHelp {
                 .getVersion()
                 .getFriendlyString();
 
-        // 解析输入确定当前子命令上下文
-        // 输入格式: "/gamesai [sub] [subsub] ..."
         String raw = ctx.getInput().trim();
-        // 去掉开头的 "/"
         if (raw.startsWith("/")) raw = raw.substring(1);
         String[] parts = raw.split("\\s+");
-        // parts[0] = "gamesai", parts[1] = 一级子命令, parts[2] = 二级子命令
         String subCommand = parts.length > 1 ? parts[1] : "";
 
-        // 欢迎信息
         source.sendSuccess(() -> Component.literal(config.getPrefix()
                     + GamesAITranslations.tr("help.games_ai.basic", version)),
             false);
 
-        if ("config".equals(subCommand)) {
-            // ── /gamesai config ── 只显示 config 子命令
-            if (source.permissions().hasPermission(Permissions.COMMANDS_OWNER)) {
-                sendHelpLine(source, "/gamesai config lang <lang>", "help.games_ai.config.lang");
-                sendHelpLine(source, "/gamesai config defaultAi <aiID>", "help.games_ai.config.default_ai");
-                sendHelpLine(source, "/gamesai config maxHistory <value>", "help.games_ai.config.max_history");
+        switch(subCommand) {
+            case "config" -> {
+                if (source.permissions().hasPermission(Permissions.COMMANDS_OWNER)) {
+                    sendHelpLine(source, "/gamesai config lang <lang>", "help.games_ai.config.lang");
+                    sendHelpLine(source, "/gamesai config defaultAi <aiID>", "help.games_ai.config.default_ai");
+                    sendHelpLine(source, "/gamesai config maxHistory <value>", "help.games_ai.config.max_history");
+                }
             }
-        } else if ("history".equals(subCommand)) {
-            // ── /gamesai history ── 只显示 history 子命令
-            sendHelpLine(source, "/gamesai history clear", "help.games_ai.history.clear");
-            if (source.permissions().hasPermission(Permissions.COMMANDS_OWNER)) {
-                sendHelpLine(source, "/gamesai history clearall", "help.games_ai.history.clearall");
+            case "history" -> {
+                sendHelpLine(source, "/gamesai history clear", "help.games_ai.history.clear");
+                if (source.permissions().hasPermission(Permissions.COMMANDS_OWNER)) {
+                    sendHelpLine(source, "/gamesai history clearall", "help.games_ai.history.clearall");
+                }
             }
-        } else {
-            // ── /gamesai（顶层）── 显示所有一级子命令
-            // 所有用户
-            sendHelpLine(source, "/gamesai history", "help.games_ai.history");
-            sendHelpLine(source, "/gamesai debug", "help.games_ai.debug.toggle");
-            sendHelpLine(source, "/gamesai help", "help.games_ai.help");
+            case "data" -> {
+                if (source.permissions().hasPermission(Permissions.COMMANDS_OWNER)) {
+                    sendHelpLine(source, "/gamesai data write <key> <value>", "help.games_ai.data.write");
+                    sendHelpLine(source, "/gamesai data add <key> <value>", "help.games_ai.data.add");
+                    sendHelpLine(source, "/gamesai data del <key>", "help.games_ai.data.del");
+                    sendHelpLine(source, "/gamesai data read <key>", "help.games_ai.data.read");
+                    sendHelpLine(source, "/gamesai data list", "help.games_ai.data.list");
+                    sendHelpLine(source, "/gamesai data list keys", "help.games_ai.data.listkeys");
+                }
+            }
+            default -> {
+                sendHelpLine(source, "/gamesai history", "help.games_ai.history");
+                sendHelpLine(source, "/gamesai help", "help.games_ai.help");
 
-            // Lv4 管理员
-            if (source.permissions().hasPermission(Permissions.COMMANDS_OWNER)) {
-                sendHelpLine(source, "/gamesai reload", "help.games_ai.reload");
-                sendHelpLine(source, "/gamesai config", "help.games_ai.config");
+                if (source.permissions().hasPermission(Permissions.COMMANDS_OWNER)) {
+                    sendHelpLine(source, "/gamesai reload", "help.games_ai.reload");
+                    sendHelpLine(source, "/gamesai config", "help.games_ai.config");
+                    sendHelpLine(source, "/gamesai data", "help.games_ai.data");
+                }
             }
         }
 
@@ -134,7 +114,6 @@ public class GamesAIHelp {
 
     private static void sendHelpLine(CommandSourceStack source, String command, String descriptionKey) {
         GamesAIConfig config = GamesAI.getConfig();
-        // 点击建议去掉占位符部分（如 "<lang>"），只保留命令前缀
         int bracketIdx = command.indexOf(" <");
         String suggestText = bracketIdx > 0 ? command.substring(0, bracketIdx) : command;
         source.sendSuccess(() -> Component.literal(config.getPrefix()

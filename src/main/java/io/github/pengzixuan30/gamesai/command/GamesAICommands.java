@@ -1,6 +1,9 @@
 package io.github.pengzixuan30.gamesai.command;
 
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -11,21 +14,15 @@ import io.github.pengzixuan30.gamesai.config.GamesAIConfigManager;
 import io.github.pengzixuan30.gamesai.help.GamesAIHelp;
 import io.github.pengzixuan30.gamesai.openai.GamesAIRequestAI;
 import io.github.pengzixuan30.gamesai.translations.GamesAITranslations;
-
-import static net.minecraft.commands.Commands.literal;
-import static net.minecraft.commands.Commands.argument;
-//import static com.mojang.brigadier.builder.LiteralArgumentBuilder.literal;
-//import static com.mojang.brigadier.builder.RequiredArgumentBuilder.argument;
-//import static net.minecraft.server.command.CommandManager.argument;
-
-//import net.minecraft.command.DefaultPermissions;
-import net.minecraft.server.permissions.Permissions;
-
+import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
-// import net.minecraft.server.command.ServerCommandSource;
+import static net.minecraft.commands.Commands.argument;
+import static net.minecraft.commands.Commands.literal;
 
-//import net.minecraft.text.Text;
+import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.server.permissions.Permissions;
 
 public class GamesAICommands {
 
@@ -33,7 +30,7 @@ public class GamesAICommands {
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(
             literal("ask")
-                //.requires(source -> source.isExecutedByPlayer() || source.getEntity() == null)
+                .requires(source -> source.getEntity() != null)
                 .then(literal("-m")
                     .then(argument("model", StringArgumentType.word())
                         .suggests((ctx, builder) -> {
@@ -43,26 +40,32 @@ public class GamesAICommands {
                             return builder.buildFuture();
                         })
                         .then(argument("content", StringArgumentType.greedyString())
-                            .executes(GamesAICommands::executeModelAsk)
+                            .executes(GamesAICommands::executeAsk)
                         )
                         .executes(GamesAIHelp::executeAskHelp)
                     )
                     .executes(GamesAIHelp::executeAskHelp)
                 )
-                .then(literal("--model")
-                    .then(argument("model", StringArgumentType.word())
-                        .suggests((ctx, builder) -> {
-                            for (String id : GamesAI.getConfig().getAllAi().keySet()) {
-                                builder.suggest(id);
-                            }
-                            return builder.buildFuture();
-                        })
+                .then(literal("-n")
+                        .then(literal("-m")
+                                .then(argument("model", StringArgumentType.word())
+                                        .suggests((ctx, builder) -> {
+                                            for (String id : GamesAI.getConfig().getAllAi().keySet()) {
+                                                builder.suggest(id);
+                                            }
+                                            return builder.buildFuture();
+                                        })
+                                        .then(argument("content", StringArgumentType.greedyString())
+                                                .executes(GamesAICommands::executeAsk)
+                                        )
+                                        .executes(GamesAIHelp::executeAskHelp)
+                                )
+                                .executes(GamesAIHelp::executeAskHelp)
+                        )
                         .then(argument("content", StringArgumentType.greedyString())
-                            .executes(GamesAICommands::executeModelAsk)
+                                .executes(GamesAICommands::executeAsk)
                         )
                         .executes(GamesAIHelp::executeAskHelp)
-                    )
-                    .executes(GamesAIHelp::executeAskHelp)
                 )
                 .then(argument("content", StringArgumentType.greedyString())
                     .executes(GamesAICommands::executeAsk)
@@ -118,12 +121,11 @@ public class GamesAICommands {
                         .then(literal("reload")
                                 .requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_OWNER))
                                 .executes(ctx -> {
-                                    GamesAITranslations.reloadTranslations();
-                                    String lang = GamesAI.getConfig().getLang();
-                                    GamesAI.LOGGER.info("Reload languages: {}", lang);
+                                    GamesAI.reload();
+                                    GamesAI.LOGGER.info("[GamesAI] Config, tools and translations reloaded");
                                     ctx.getSource().getServer().getPlayerList().broadcastSystemMessage(
                                             Component.literal(GamesAI.getConfig().getPrefix()
-                                                    + GamesAITranslations.tr("command.games_ai.reload", lang)),
+                                                    + GamesAITranslations.tr("command.games_ai.reload")),
                                             false
                                     );
                                     return 1;
@@ -238,6 +240,125 @@ public class GamesAICommands {
                                 )
                                 .executes(GamesAIHelp::executeGamesAIHelp)
                         )
+                        .then(literal("data")
+                                .then(literal("write")
+                                        .then(argument("key", StringArgumentType.word())
+                                                .then(argument("value", StringArgumentType.greedyString())
+                                                        .executes(ctx -> {
+                                                            String key = StringArgumentType.getString(ctx, "key");
+                                                            String value = StringArgumentType.getString(ctx, "value");
+                                                            boolean ok = GamesAI.getDatabase().writeData(key, value);
+                                                            ctx.getSource().sendSuccess(() ->
+                                                                Component.literal(GamesAI.getConfig().getPrefix()
+                                                                        + GamesAITranslations.tr(ok ? "command.games_ai.data.write" : "command.games_ai.data.write.failed", key, value)),
+                                                                    false
+                                                            );
+                                                            return 1;
+                                                        })
+                                                )
+                                                .executes(GamesAIHelp::executeGamesAIHelp)
+                                        )
+                                        .executes(GamesAIHelp::executeGamesAIHelp)
+                                )
+                                .then(literal("add")
+                                        .then(argument("key", StringArgumentType.word())
+                                                .then(argument("value", StringArgumentType.greedyString())
+                                                        .executes(ctx -> {
+                                                            String key = StringArgumentType.getString(ctx, "key");
+                                                            String value = StringArgumentType.getString(ctx, "value");
+                                                            boolean ok = GamesAI.getDatabase().appendData(key, value);
+                                                            ctx.getSource().sendSuccess(() ->
+                                                                    Component.literal(GamesAI.getConfig().getPrefix()
+                                                                            + GamesAITranslations.tr(ok ? "command.games_ai.data.add" : "command.games_ai.data.add.failed", key, value)),
+                                                                    false
+                                                                    );
+                                                            return 1;
+                                                        })
+                                                )
+                                                .executes(GamesAIHelp::executeGamesAIHelp)
+                                        )
+                                        .executes(GamesAIHelp::executeGamesAIHelp)
+                                )
+                                .then(literal("del")
+                                        .then(argument("key", StringArgumentType.word())
+                                                .executes(ctx -> {
+                                                    String key = StringArgumentType.getString(ctx, "key");
+                                                    boolean ok = GamesAI.getDatabase().deleteData(key);
+                                                    ctx.getSource().sendSuccess(() ->
+                                                            Component.literal(GamesAI.getConfig().getPrefix()
+                                                                    + GamesAITranslations.tr(ok ? "command.games_ai.data.del" : "command.games_ai.data.del.failed", key)),
+                                                            false
+                                                            );
+                                                    return 1;
+                                                })
+                                        )
+                                        .executes(GamesAIHelp::executeGamesAIHelp)
+                                )
+                                .then(literal("read")
+                                        .then(argument("key", StringArgumentType.word())
+                                                .executes(ctx -> {
+                                                    String key = StringArgumentType.getString(ctx, "key");
+                                                    String value = GamesAI.getDatabase().readData(key);
+                                                    String displayValue = value != null ? value : GamesAITranslations.tr("command.games_ai.data.read.null");
+                                                    ctx.getSource().sendSuccess(() ->
+                                                            Component.literal(GamesAI.getConfig().getPrefix()
+                                                                    + GamesAITranslations.tr("command.games_ai.data.read", key, displayValue)),
+                                                            false
+                                                    );
+                                                    if (value != null) {
+                                                        ctx.getSource().sendSuccess(() ->
+                                                                Component.literal(GamesAI.getConfig().getPrefix())
+                                                                        .append(Component.literal(GamesAITranslations.tr("command.games_ai.data.read.fill"))
+                                                                                .withStyle(ChatFormatting.GRAY)
+                                                                                .withStyle(style -> style
+                                                                                        .withClickEvent(new ClickEvent.SuggestCommand(
+                                                                                                "/gamesai data write " + key + " " + value
+                                                                                        ))
+                                                                                        .withHoverEvent(new HoverEvent.ShowText(
+                                                                                                Component.literal(GamesAITranslations.tr("command.games_ai.data.read.fill.hover"))
+                                                                                        ))))
+                                                                        .append(Component.literal("  OR  "))
+                                                                        .append(Component.literal(GamesAITranslations.tr("command.games_ai.data.read.copy"))
+                                                                                .withStyle(ChatFormatting.BLUE)
+                                                                                .withStyle(style -> style
+                                                                                        .withClickEvent(new ClickEvent.CopyToClipboard(
+                                                                                                value
+                                                                                        ))
+                                                                                        .withHoverEvent(new HoverEvent.ShowText(
+                                                                                                Component.literal(GamesAITranslations.tr("command.games_ai.data.read.copy.hover"))
+                                                                                        )))),
+                                                                false
+                                                        );
+                                                    }
+                                                    return 1;
+                                                })
+                                        )
+                                        .executes(GamesAIHelp::executeGamesAIHelp)
+                                )
+                                .then(literal("list")
+                                        .then(literal("keys")
+                                                .executes(ctx -> {
+                                                    List<String> keys = GamesAI.getDatabase().getAllKeys();
+                                                    ctx.getSource().sendSuccess(() ->
+                                                            Component.literal(GamesAI.getConfig().getPrefix()
+                                                                    + GamesAITranslations.tr("command.games_ai.data.keys", keys)),
+                                                            false
+                                                            );
+                                                    return 1;
+                                                })
+                                        )
+                                        .executes(ctx -> {
+                                            Map<String, String> dataList = GamesAI.getDatabase().dataList();
+                                            ctx.getSource().sendSuccess(() ->
+                                                    Component.literal(GamesAI.getConfig().getPrefix()
+                                                            + GamesAITranslations.tr("command.games_ai.data.list", dataList)),
+                                            false
+                                            );
+                                            return 1;
+                                        })
+                                )
+                                .executes(GamesAIHelp::executeGamesAIHelp)
+                        )
                         .executes(GamesAIHelp::executeGamesAIHelp)
         );
     }
@@ -246,46 +367,31 @@ public class GamesAICommands {
         String content = StringArgumentType.getString(ctx, "content");
         CommandSourceStack source = ctx.getSource();
         String playerName = source.getTextName();
-        String model = GamesAI.getConfig().getDefaultAi();
 
-        source.sendSuccess(() -> Component.literal(GamesAITranslations.tr("command.games_ai.ask.thinking", GamesAI.getConfig().getAllAi().get(model).getAiName())), false);
+        String model;
+        try {
+            model = StringArgumentType.getString(ctx, "model");
+        } catch (IllegalArgumentException e) {
+            model = GamesAI.getConfig().getDefaultAi();
+        }
+        final String finalModel = model;
 
-        CompletableFuture.supplyAsync(() -> GamesAIRequestAI.askAi(playerName, model, content))
-            .exceptionally(ex -> {
-                GamesAI.LOGGER.error("Async AI request failed", ex);
-                return GamesAITranslations.tr("command.games_ai.ask.exception", ex.getMessage());
-            })
-            .thenAccept(result -> {
-                try {
-                    source.getServer().execute(() -> {
-                        try {
-                            source.sendSuccess(() -> Component.literal(result), false);
-                        } catch (Exception e) {
-                            GamesAI.LOGGER.error("Failed to send feedback", e);
-                        }
-                    });
-                } catch (Exception e) {
-                    GamesAI.LOGGER.error("Failed to schedule feedback on server thread", e);
-                }
-            });
+        boolean noHistory = ctx.getNodes().stream()
+                .anyMatch(node -> node.getNode().getName().equals("-n"));
 
-        return 1;
-    }
+        source.sendSuccess(() -> Component.literal(GamesAITranslations.tr("command.games_ai.ask.thinking", GamesAI.getConfig().getAllAi().get(finalModel).getAiName())), false);
 
-    //CommandContext<ServerCommandSource>
-    private static int executeModelAsk(CommandContext<CommandSourceStack> ctx) {
-        String model = StringArgumentType.getString(ctx, "model");
-        String content = StringArgumentType.getString(ctx, "content");
-        //ServerCommandSource
-        CommandSourceStack source = ctx.getSource();
-        //getName
-        String playerName = source.getTextName();
+        Consumer<String> feedback = msg -> {
+            try {
+                source.getServer().execute(() ->
+                    source.sendSuccess(() -> Component.literal(msg), false)
+                );
+            } catch (Exception e) {
+                GamesAI.LOGGER.error("Failed to send tool feedback", e);
+            }
+        };
 
-        //Text.literal
-        //sendFeedback
-        source.sendSuccess(() -> Component.literal(GamesAITranslations.tr("command.games_ai.ask.thinking_model", GamesAI.getConfig().getAllAi().get(model).getAiName(), model)), false);
-
-        CompletableFuture.supplyAsync(() -> GamesAIRequestAI.askAi(playerName, model, content))
+        CompletableFuture.supplyAsync(() -> GamesAIRequestAI.askAi(playerName, finalModel, content, noHistory, feedback))
             .exceptionally(ex -> {
                 GamesAI.LOGGER.error("Async AI request failed", ex);
                 return GamesAITranslations.tr("command.games_ai.ask.exception", ex.getMessage());

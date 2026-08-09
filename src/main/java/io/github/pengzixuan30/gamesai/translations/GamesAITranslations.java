@@ -40,6 +40,6 @@ public class GamesAITranslations {
 
     public static String tr(String key, Object... args) {
         String template = map.getOrDefault(key, key);
-        return String.format(template, args);
+        return java.util.Objects.requireNonNull(String.format(template, args));
     }
 }

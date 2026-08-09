@@ -1,9 +1,9 @@
 package io.github.pengzixuan30.gamesai.config;
 
-import com.google.gson.annotations.SerializedName;
-
 import java.util.HashMap;
 import java.util.Map;
+
+import com.google.gson.annotations.SerializedName;
 
 public class GamesAIConfig {
 
@@ -38,17 +38,22 @@ public class GamesAIConfig {
         @SerializedName("api_key")
         private String apiKey = "<Your API Key>";
 
+        @SerializedName("extra_body")
+        private Map<String, Object> extraBody = new HashMap<>();
+
         public String getPrompt() { return prompt; }
         public String getAiName() { return aiName; }
         public String getBaseUrl() { return baseUrl; }
         public String getAiModel() { return aiModel; }
         public String getApiKey() { return apiKey; }
+        public Map<String, Object> getExtraBody() { return extraBody; }
 
         public void setPrompt(String prompt) { this.prompt = prompt; }
         public void setAiName(String aiName) { this.aiName = aiName; }
         public void setBaseUrl(String baseUrl) { this.baseUrl = baseUrl; }
         public void setAiModel(String aiModel) { this.aiModel = aiModel; }
         public void setApiKey(String apiKey) { this.apiKey = apiKey; }
+        public void setExtraBody(Map<String, Object> extraBody) { this.extraBody = extraBody; }
     }
 
     public GamesAIConfig() {

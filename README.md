@@ -1,6 +1,6 @@
 <div align="center">
 
-# GamesAI
+# GamesAI for Fabric
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Minecraft](https://img.shields.io/badge/Minecraft-Fabric-brightgreen)](https://fabricmc.net)
@@ -9,62 +9,175 @@
 
 **English** | [简体中文](README.zh-CN.md)
 
+[Report an Issue](https://github.com/PengZixuan30/GamesAI/issues/new) | [Share an Idea](https://github.com/PengZixuan30/GamesAI/discussions/new/choose) | [Join QQ Group](https://qm.qq.com/q/jDQQaUPNmw)
+
+[Go to MCDReforged Version](https://github.com/PengZixuan30/Games_AI)
+
 </div>
+
+> [!NOTE]
+> **GamesAI Plugin/Mod QQ Group: 849544707** — Join us to discuss issues, share feedback, and exchange prompt, skills, tools configurations!
+
+> [!NOTE]
+> Welcome to GamesAI for Fabric! This mod brings AI assistants into Minecraft — ask questions, manage data, and configure AI backends right from the game.
+
+<details>
+<summary>Table of Contents (click to expand)</summary>
+
+- [GamesAI for Fabric](#gamesai-for-fabric)
+  - [Features](#features)
+  - [Installation](#installation)
+    - [Prerequisites](#prerequisites)
+    - [Steps](#steps)
+  - [Usage](#usage)
+    - [Ask Commands](#ask-commands)
+    - [Management Commands](#management-commands)
+      - [General](#general)
+      - [History](#history)
+      - [Config](#config)
+      - [Data](#data)
+    - [Client Commands](#client-commands)
+    - [In-Game Config Screen](#in-game-config-screen)
+  - [Configuration](#configuration)
+    - [Default Structure](#default-structure)
+    - [1. prefix](#1-prefix)
+    - [2. max\_history](#2-max_history)
+    - [3. lang](#3-lang)
+    - [4. all\_ai](#4-all_ai)
+      - [Multi-Profile Example](#multi-profile-example)
+    - [5. default\_ai](#5-default_ai)
+    - [prompt File Reference](#prompt-file-reference)
+  - [Database System](#database-system)
+  - [AI Tools](#ai-tools)
+    - [Built-in Tools](#built-in-tools)
+    - [Custom Tools via Groovy](#custom-tools-via-groovy)
+  - [Project Structure](#project-structure)
+  - [Architecture](#architecture)
+  - [Building](#building)
+    - [Prerequisites](#prerequisites-1)
+    - [Build](#build)
+    - [Dev Environment](#dev-environment)
+  - [Troubleshooting](#troubleshooting)
+    - [`/ask` Returns Errors](#ask-returns-errors)
+    - [AI Tools Not Working](#ai-tools-not-working)
+    - [Config Screen Issues](#config-screen-issues)
+  - [Version Compatibility](#version-compatibility)
+  - [Acknowledgements](#acknowledgements)
+  - [License](#license)
+
+</details>
 
 ---
 
 ## Features
 
-- **`/ask` command** — Ask AI questions directly from the Minecraft chat
-- **Multi-model support** — Switch between AI models via `-m` / `--model` flags
-- **Multi-profile configuration** — Define multiple AI backends (OpenAI, custom endpoints, etc.) with independent API keys, prompts, and base URLs
+- **`/ask` command** — Ask AI questions directly from Minecraft chat
+- **Client-side `/c-ask` command** — Ask AI from the client without server commands
+- **Multi-model support** — Switch between AI models via `-m` flag
+- **Multi-profile configuration** — Define multiple AI backends with independent API keys, prompts, and base URLs
 - **Async execution** — AI requests run off the main thread, never freezing the server
-- **Compatible with any OpenAI-compatible API** — Works with OpenAI, local LLMs (Ollama / LM Studio), or self-hosted endpoints
-- **Auto-generated config** — First run creates a default `config/games_ai/config.json`, no manual setup needed
-- **Multi-language support** — Server-wide language switching (en_us / zh_cn), live reload without restart
+- **OpenAI-compatible API** — Works with OpenAI, local LLMs (Ollama / LM Studio), or self-hosted endpoints
+- **Auto-generated config** — First run creates `config/games_ai/config.json`
+- **Multi-language** — Server-wide language switching (en_us / zh_cn), live reload without restart
 - **Conversation history** — Per-player, per-model history with configurable length and auto-trimming
 - **Context-sensitive help** — `/gamesai help` adapts to your current command context
+- **In-game config GUI** — Press **F6** to open the visual configuration screen
+- **Public database** — SQLite-based key-value store accessible by AI tools and commands
+- **Groovy custom tools** — Extend AI capabilities with custom Groovy scripts
+- **Prompt file support** — Reference external `.md` files for system prompts via `> filename`
 - **Debug mode** — Toggle request logging for troubleshooting API issues
+
+---
+
+## Installation
+
+### Prerequisites
+
+- **Minecraft 1.21+** (or Fabric-compatible version — see [Version Compatibility](#version-compatibility))
+- **Fabric Loader** ≥ 0.16.10
+- **Fabric API** (latest for your MC version)
+- **Java 21** or newer
+
+### Steps
+
+1. Download the latest `.jar` from [Releases](https://github.com/PengZixuan30/GamesAI/releases)
+2. Place it in your `.minecraft/mods/` folder
+3. Launch the game with Fabric Loader
+4. A default config file is generated at `config/games_ai/config.json` on first run
+5. Edit the config with your API credentials, then reload with `/gamesai reload`
 
 ---
 
 ## Usage
 
-### Commands
-
-```
-/ask <your question>
-/ask -m <model_name> <your question>
-/ask --model <model_name> <your question>
-```
-
-| Subcommand | Description |
-|------------|-------------|
-| `/ask <content>` | Ask AI using the **default** model set in config |
+### Ask Commands
+| Command | Description |
+|---------|-------------|
+| `/ask <content>` | Ask AI using the **default** model |
 | `/ask -m <model> <content>` | Ask AI using a **specific** model profile |
-| `/ask --model <model> <content>` | Same as `-m` (long form) |
+| `/ask -n <content>` | Ask AI **without** conversation history |
+| `/ask -n -m <model> <content>` | Specific model, no history |
 
-### Example
-
-```
-/ask Explain how to build a redstone clock
-/ask -m deepseek-v3 Write a haiku about creepers
-```
+> [!NOTE]
+> Only short flags (`-m`, `-n`) are supported. Long forms (`--model`, `--no-history`) are not available to avoid duplication in Minecraft's built-in command suggestions.
 
 ### Management Commands
+
+#### General
 
 | Command | Permission | Description |
 |---------|-----------|-------------|
 | `/gamesai help` | Everyone | Show context-sensitive help |
+| `/gamesai reload` | Owner (Lv4) | Reload config, tools, and translations |
+
+#### History
+
+| Command | Permission | Description |
+|---------|-----------|-------------|
 | `/gamesai history clear` | Everyone | Clear your own conversation history |
-| `/gamesai debug` | Everyone | Toggle debug mode (request logging) |
 | `/gamesai history clearall` | Owner (Lv4) | Clear all players' history |
-| `/gamesai reload` | Owner (Lv4) | Reload language files from disk |
+
+#### Config
+
+| Command | Permission | Description |
+|---------|-----------|-------------|
 | `/gamesai config lang <lang>` | Owner (Lv4) | Set server language (en_us / zh_cn) |
-| `/gamesai config defaultAi <aiID>` | Owner (Lv4) | Set default AI model profile |
+| `/gamesai config defaultAi <aiID>` | Owner (Lv4) | Set default AI model |
 | `/gamesai config maxHistory <value>` | Owner (Lv4) | Set max conversation rounds (≥ 1) |
 
-> 💡 Type `/gamesai help` in-game for clickable command suggestions.
+#### Data
+
+| Command | Permission | Description |
+|---------|-----------|-------------|
+| `/gamesai data write <key> <value>` | Owner (Lv4) | Write data to database (overwrite) |
+| `/gamesai data add <key> <value>` | Owner (Lv4) | Append data to database |
+| `/gamesai data del <key>` | Owner (Lv4) | Delete an entry from database |
+| `/gamesai data read <key>` | Owner (Lv4) | Read value by key |
+| `/gamesai data list` | Owner (Lv4) | List all key-value pairs |
+| `/gamesai data list keys` | Owner (Lv4) | List all keys |
+
+> [!TIP]
+> Type `/gamesai help` in-game for clickable command suggestions.
+
+### Client Commands
+
+| Command | Description |
+|---------|-------------|
+| `/c-ask <content>` | Ask AI from the client side (no server command permission needed) |
+| `/c-ask -m <model> <content>` | Client-side ask with specific model |
+| `/c-ask -n <content>` | Client-side ask without history |
+| `/c-ask -n -m <model> <content>` | Client-side ask, specific model, no history |
+
+### In-Game Config Screen
+
+Press **F6** (default) to open the visual configuration screen
+
+- **General Settings** — Edit `prefix`, `max_history`, `lang`, `default_ai` with sliders, text fields, and cycle buttons
+- **AI Profiles** — Add, edit, or delete AI backend configurations with a visual editor
+- Changes are saved to `config.json` and applied immediately
+
+> [!TIP]
+> To rebind the config screen key: **Options → Controls → Key Binds → Miscellaneous → Open GamesAI Config**
 
 ---
 
@@ -73,7 +186,7 @@
 On first run, a default config is created at:
 
 ```
-<minecraft_dir>/config/games_ai/config.json
+.minecraft/config/games_ai/config.json
 ```
 
 ### Default Structure
@@ -89,54 +202,214 @@ On first run, a default config is created at:
       "ai_name": "[GamesAI]",
       "base_url": "<Your Base URL>",
       "ai_model": "<Your AI Model>",
-      "api_key": "<Your API Key>"
+      "api_key": "<Your API Key>",
+      "extra_body": {}
     }
   },
   "default_ai": "example_ai"
 }
 ```
 
-### Adding Multiple AI Profiles
+---
+
+### 1. prefix
+
+| Property | Value |
+|----------|-------|
+| **Type** | `String` |
+| **Default** | `[GamesAI]` |
+
+The plugin name used as a prefix in replies. May include Minecraft formatting codes.
+
+---
+
+### 2. max_history
+
+| Property | Value |
+|----------|-------|
+| **Type** | `int` |
+| **Default** | `10` |
+
+The maximum number of conversation turns retained per player per model. Set to `0` to disable history. History is stored in memory and cleared on server restart.
+
+---
+
+### 3. lang
+
+| Property | Value |
+|----------|-------|
+| **Type** | `String` |
+| **Default** | `en_us` |
+| **Options** | `en_us`, `zh_cn` |
+
+Server-wide display language. Changes take effect after `/gamesai reload`.
+
+---
+
+### 4. all_ai
+
+| Property | Value |
+|----------|-------|
+| **Type** | `dict` |
+
+All AI configuration entries. Each entry is a dictionary (the key is the internal AI_ID):
+
+| Field | Description |
+|-------|-------------|
+| **prompt** | System prompt for this AI. Use `> filename.md` to load from `config/games_ai/prompt/`. |
+| **ai_name** | Display name shown in chat (may include Minecraft formatting codes). |
+| **base_url** | API endpoint URL (e.g., `https://api.openai.com/v1`). |
+| **ai_model** | Model name (e.g., `gpt-4o`, `deepseek-chat`). |
+| **api_key** | API authentication key. |
+| **extra_body** | Additional parameters passed to the API (e.g., `{"thinking": {"type": "enabled"}}` for DeepSeek). Default: `{}`. |
+
+#### Multi-Profile Example
 
 ```json
 {
-  "prefix": "[GamesAI]",
-  "max_history": 10,
-  "lang": "en_us",
   "all_ai": {
     "gpt4o": {
       "prompt": "You are a Minecraft expert.",
       "ai_name": "[GPT-4o]",
       "base_url": "https://api.openai.com/v1",
       "ai_model": "gpt-4o",
-      "api_key": "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+      "api_key": "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "extra_body": {}
+    },
+    "deepseek": {
+      "prompt": "You are a helpful Minecraft assistant.",
+      "ai_name": "[DeepSeek]",
+      "base_url": "https://api.deepseek.com",
+      "ai_model": "deepseek-chat",
+      "api_key": "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "extra_body": {}
     },
     "local_llama": {
       "prompt": "You are a friendly Minecraft assistant.",
       "ai_name": "[Llama3]",
       "base_url": "http://localhost:11434/v1",
       "ai_model": "llama3",
-      "api_key": "ollama"
+      "api_key": "ollama",
+      "extra_body": {}
     }
   },
   "default_ai": "gpt4o"
 }
 ```
 
-> **Tip:** For Ollama / local models, set `api_key` to `"ollama"` as a placeholder.
+> [!TIP]
+> For Ollama / local models, set `api_key` to `"ollama"` as a placeholder.
 
 ---
 
-## Conversation History
+### 5. default_ai
 
-The mod maintains **per-player, per-model** conversation history in memory.
+| Property | Value |
+|----------|-------|
+| **Type** | `String` |
 
-| Setting | Behavior |
-|---------|----------|
-| `max_history: 10` | Keeps last 10 rounds (20 messages) per player per model |
-| Exceeded | Oldest rounds trimmed, keeping complete user-assistant pairs |
-| `system` prompt | Injected fresh each request, not stored in history |
-| Restart | Server restart clears all history |
+The model used when a player simply uses `/ask`. Must be one of the keys in `all_ai`.
+
+---
+
+### prompt File Reference
+
+Instead of embedding long prompts in `config.json`, you can reference external files:
+
+1. Place your prompt file in `config/games_ai/prompt/` (e.g., `my_prompt.md`)
+2. Set `"prompt": "> my_prompt.md"` in the AI profile
+
+The mod automatically reads the file contents at request time. Any text file format (`.md`, `.txt`, etc.) is supported.
+
+---
+
+## Database System
+
+GamesAI includes a SQLite-based public database at `config/games_ai/database/database.db`.
+
+| Command | Description |
+|---------|-------------|
+| `/gamesai data write <key> <value>` | Write a key-value pair (overwrites existing) |
+| `/gamesai data add <key> <value>` | Append value to an existing key (auto-creates) |
+| `/gamesai data del <key>` | Delete an entry |
+| `/gamesai data read <key>` | Read a value by key |
+| `/gamesai data list` | List all key-value pairs |
+| `/gamesai data list keys` | List all keys |
+
+The AI can also read and write the database through built-in tools (`ai_read_data`, `ai_write_data`, `ai_add_data`, `ai_del_data`).
+
+---
+
+## AI Tools
+
+The AI can call functions to interact with Minecraft and the database.
+
+### Built-in Tools
+
+| Tool | Parameters | Description |
+|------|-----------|-------------|
+| `get_online_players` | none | Get the current online player list |
+| `get_whitelist_name` | none | Get the server whitelist |
+| `add_to_whitelist` | `player` | Add a player to the whitelist |
+| `remove_from_whitelist` | `player` | Remove a player from the whitelist |
+| `search_minecraft_wiki` | `query` | Search the Minecraft Wiki |
+| `calculator` | `expression` | Evaluate a mathematical expression |
+| `item_calculator` | `expression`, `single_limit` | Calculate item counts with Minecraft units (stacks/shulkers) |
+| `ai_read_data` | `key` | Read a database entry |
+| `ai_read_all_keys` | none | Get all database keys |
+| `ai_read_all_data` | none | Read all database entries |
+| `ai_write_data` | `key`, `value` | Write to database (overwrite) |
+| `ai_add_data` | `key`, `value` | Append to database |
+| `ai_del_data` | `key` | Delete a database entry |
+| `read_skills` | `skills` | Read a skill file |
+| `setting_timer` | `duration` | Wait for N seconds before continuing |
+| `reload_plugin` | none | Execute `/gamesai reload` |
+
+### Custom Tools via Groovy
+
+You can extend AI capabilities by writing Groovy scripts:
+
+1. Place `.groovy` files in `config/games_ai/tools/`
+2. Annotate methods with `@RegisterTool`:
+
+```groovy
+import io.github.pengzixuan30.gamesai.tools.GamesAIToolsRegister
+
+@GamesAIToolsRegister.RegisterTool(
+    name = "my_custom_tool",
+    description = "Does something useful"
+)
+String myCustomTool(String param, Consumer<String> feedback, String aiName) {
+    feedback.accept("Executing custom tool...")
+    return "Result: $param processed"
+}
+```
+
+3. Reload with `/gamesai reload` — tools are discovered and registered automatically.
+
+---
+
+## Skills
+
+Skills are Markdown files that provide the AI with domain-specific knowledge and instructions. The AI can read them via the `read_skills` tool.
+
+### Adding Skills
+
+1. Place `.md` files in `config/games_ai/skills/`
+2. Register them in `config/games_ai/skills/skills.json`:
+
+```json
+[
+  {
+    "skills": "my_guide.md",
+    "summary": "A guide for building redstone machines"
+  }
+]
+```
+
+3. Reload with `/gamesai reload`
+
+Registered skills appear in the AI's system prompt so it knows what knowledge is available.
 
 ---
 
@@ -149,28 +422,38 @@ src/
 │   ├── command/
 │   │   └── GamesAICommands.java      # Command registration & execution
 │   ├── config/
-│   │   ├── GamesAIConfig.java        # Config data model (AI profiles)
-│   │   └── GamesAIConfigManager.java # Config file read/write (JSON)
+│   │   ├── GamesAIConfig.java        # Config data model (AI profiles, extra_body)
+│   │   └── GamesAIConfigManager.java # Config file read/write (JSON, UTF-8)
+│   ├── database/
+│   │   └── GamesAIDatabase.java      # SQLite public database
 │   ├── help/
 │   │   └── GamesAIHelp.java          # Context-sensitive help system
 │   ├── openai/
 │   │   └── GamesAIRequestAI.java     # OpenAI API client & response handling
+│   ├── tools/
+│   │   ├── GamesAIToolsRegister.java # Tool annotation scanner
+│   │   ├── GamesAIBuiltinTools.java  # Built-in tool implementations
+│   │   └── GamesAIExternalToolsLoader.java # Groovy tool loader
 │   └── translations/
-│       └── GamesAITranslations.java  # I18n translation engine (JSON + GSON)
+│       └── GamesAITranslations.java  # I18n translation engine
 ├── main/resources/
 │   ├── fabric.mod.json               # Fabric mod metadata
-│   ├── assets/games_ai/icon.png      # Mod icon (optional)
-│   └── assets/games_ai/lang/         # Translation files (en_us, zh_cn, ...)
+│   └── assets/games_ai/lang/         # Translation files (en_us, zh_cn)
 ├── client/java/io/github/pengzixuan30/gamesai/client/
-│   └── GamesAIClient.java            # Client-side entry (placeholder)
-├── build.gradle                      # Gradle build configuration
-├── gradle.properties                 # Minecraft & dependency versions
-└── settings.gradle                   # Gradle plugin repositories
+│   ├── GamesAIClient.java            # Client entry — key binding, /c-ask
+│   └── screen/
+│       ├── GamesAIConfigScreen.java           # Main config screen
+│       ├── GeneralConfigEditScreen.java       # General settings editor
+│       ├── AiProfileConfigEditScreen.java     # AI profile list editor
+│       └── AiProfileDetailConfigEditScreen.java # AI profile detail editor
+├── build.gradle
+├── gradle.properties
+└── settings.gradle
 ```
 
 ---
 
-## Architecture Overview
+## Architecture
 
 ```mermaid
 flowchart LR
@@ -185,17 +468,28 @@ flowchart LR
     API --> History
     API -->|response| Cmd
     Cmd -->|sendMessage| Player[Minecraft Player]
+    Main --> DB[(GamesAIDatabase)]
+    DB --> API
+    Main --> Tools[GamesAIToolsRegister]
+    Tools --> API
+    GUI[Config Screen] --> Manager
 ```
 
 | Class | Responsibility |
 |-------|---------------|
-| `GamesAI` | Mod lifecycle, config, `allHistory` CRUD, `safeTrimHistory`, debug mode |
+| `GamesAI` | Mod lifecycle, config, `allHistory` CRUD, `safeTrimHistory`, debug mode, prompt resolution |
 | `GamesAICommands` | Command tree (`/ask`, `/gamesai`), async dispatch with `CompletableFuture` |
-| `GamesAIConfig` | Data model: `prefix`, `max_history`, `lang`, `all_ai` profiles, `default_ai` |
+| `GamesAIConfig` | Data model: `prefix`, `max_history`, `lang`, `all_ai` profiles (with `extra_body`), `default_ai` |
 | `GamesAIConfigManager` | GSON serialization, file I/O to `config/games_ai/config.json` (UTF-8) |
+| `GamesAIDatabase` | SQLite key-value store for public data |
 | `GamesAIHelp` | Context-sensitive help: `/gamesai` → top-level, `/gamesai config` → subcommands only |
-| `GamesAIRequestAI` | OpenAI SDK client, builds messages (`system → history → user`), manages history writes |
-| `GamesAITranslations` | I18n engine: loads JSON from `assets/games_ai/lang/`, UTF-8, live reload support |
+| `GamesAIRequestAI` | OpenAI SDK client, builds messages (`system → history → user`), manages history |
+| `GamesAITranslations` | I18n engine: loads JSON from `assets/games_ai/lang/`, UTF-8, live reload |
+| `GamesAIToolsRegister` | `@RegisterTool` annotation scanner for built-in & Groovy tools |
+| `GamesAIBuiltinTools` | 15+ built-in AI functions (wiki, calculator, whitelist, database, skills) |
+| `GamesAIExternalToolsLoader` | Groovy script loader from `config/games_ai/tools/*.groovy` |
+| `GamesAIClient` | Client-side entry: F6 hotkey for config GUI, `/c-ask` command |
+| `Config Screens` | In-game visual config editor with undo/save, sliders, cycle buttons |
 
 ---
 
@@ -209,17 +503,14 @@ flowchart LR
 ### Build
 
 ```bash
-# Clone the repository
-git clone https://github.com/pengzixuan30/GamesAI.git
+git clone https://github.com/PengZixuan30/GamesAI.git
 cd GamesAI
-
-# Build the mod
 ./gradlew build
 ```
 
-The compiled `.jar` will be at: `build/libs/games_ai-0.1.1-Fabric-xxx.jar`
+The compiled `.jar` will be at: `build/libs/games_ai-*.jar`
 
-### Run in Dev Environment
+### Dev Environment
 
 ```bash
 ./gradlew runClient    # Launch Minecraft client with the mod
@@ -228,24 +519,29 @@ The compiled `.jar` will be at: `build/libs/games_ai-0.1.1-Fabric-xxx.jar`
 
 ---
 
-### Quick Version Migration
+## Troubleshooting
 
-For minor patch upgrades within 1.21.x, edit `gradle.properties`:
+### `/ask` Returns Errors
 
-```properties
-minecraft_version=<new_version>
-yarn_mappings=<new_version>+build.X
-fabric_version=<api_version>+<new_version>
-```
+| Error | Likely Cause | Fix |
+|-------|-------------|-----|
+| 401 | Invalid API key | Check `api_key` in the AI profile |
+| 404 | Wrong base URL or model name | Verify `base_url` and `ai_model` |
+| 429 | Rate limited | Wait and retry; reduce request frequency |
+| Timeout | Server unreachable | Check network and `base_url` |
+| Empty reply | Model returned nothing | Check prompt and model compatibility |
 
-Then rebuild and test. Check [fabricmc.net/develop](https://fabricmc.net/develop/) for recommended version combinations.
+### AI Tools Not Working
 
----
+- Ensure tools are properly registered: check server log for `[GamesAIToolsRegister] Registered tool: ...`
+- For custom Groovy tools, check `config/games_ai/tools/` for syntax errors
+- Enable debug mode: `/gamesai debug` to see full prompts and tool call results
 
-## Server Notes
+### Config Screen Issues
 
-- **History is in-memory only** — server restart clears all conversations
-- **API costs** — each `/ask` makes one HTTP request to the configured endpoint
+- Press **F6** to open (check key binding in Controls → Miscellaneous)
+- Config changes in the GUI are saved only when you click "Save"
+- Use "Undo" to revert to the last saved state
 
 ---
 
@@ -253,10 +549,10 @@ Then rebuild and test. Check [fabricmc.net/develop](https://fabricmc.net/develop
 
 | Minecraft | Fabric Loader (min) | Yarn Mappings (min) | Fabric API (min) |
 |-----------|---------------------|---------------------|-------------------|
-| 26.2      | 0.18.4              | -                    | 0.152.1+26.2     |
-| 26.1.2    | 0.18.4              | -                    | 0.145.4+26.1.2   |
-| 26.1.1    | 0.18.4              | -                    | 0.145.2+26.1.1   |
-| 26.1      | 0.18.4              | -                    | 0.144.0+26.1     |
+| 26.2      | 0.18.4              | -                   | 0.152.1+26.2     |
+| 26.1.2    | 0.18.4              | -                   | 0.145.4+26.1.2   |
+| 26.1.1    | 0.18.4              | -                   | 0.145.2+26.1.1   |
+| 26.1      | 0.18.4              | -                   | 0.144.0+26.1     |
 | 1.21.11   | 0.17.3              | 1.21.11+build.6     | 0.139.4+1.21.11  |
 | 1.21.10   | 0.17.0              | 1.21.10+build.3     | 0.134.1+1.21.10  |
 | 1.21.9    | 0.17.0              | 1.21.9+build.1      | 0.133.14+1.21.9  |
@@ -274,16 +570,16 @@ Then rebuild and test. Check [fabricmc.net/develop](https://fabricmc.net/develop
 
 ---
 
-## License
-
-- **Source code** is licensed under the MIT License – see the [LICENSE](./LICENSE) file for details.
-- **Logo and visual assets** are proprietary and all rights are reserved by **冬天衣服不错**. You may view and share them for personal, non‑commercial use, but any modification or commercial use requires prior written permission.
-
----
-
 ## Acknowledgements
 
 - [DA100](https://github.com/DA100102) — Logo design for this mod
 - [FabricMC](https://fabricmc.net) — Modding framework
-- [openai/openai-java](https://github.com/openai/openai-java) — The official Java library for the OpenAI API
+- [openai/openai-java](https://github.com/openai/openai-java) — Official OpenAI Java library
 - Minecraft is a trademark of Mojang / Microsoft. This mod is not affiliated with Mojang.
+
+---
+
+## License
+
+- **Source code** is licensed under the MIT License — see the [LICENSE](./LICENSE) file for details.
+- **Logo and visual assets** are proprietary and all rights reserved by **冬天衣服不错**. You may view and share them for personal, non‑commercial use, but any modification or commercial use requires prior written permission.

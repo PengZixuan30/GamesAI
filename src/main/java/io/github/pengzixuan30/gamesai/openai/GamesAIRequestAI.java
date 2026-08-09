@@ -4,26 +4,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import com.openai.client.OpenAIClient;
 import com.openai.client.okhttp.OpenAIOkHttpClient;
-import com.openai.models.chat.completions.ChatCompletion;
-import com.openai.models.chat.completions.ChatCompletionAssistantMessageParam;
-import com.openai.models.chat.completions.ChatCompletionCreateParams;
-import com.openai.models.chat.completions.ChatCompletionMessageParam;
-import com.openai.models.chat.completions.ChatCompletionSystemMessageParam;
-import com.openai.models.chat.completions.ChatCompletionUserMessageParam;
+import com.openai.models.chat.completions.*;
 
 import io.github.pengzixuan30.gamesai.GamesAI;
-import io.github.pengzixuan30.gamesai.translations.GamesAITranslations;
 import io.github.pengzixuan30.gamesai.config.GamesAIConfig;
-
-//import net.minecraft.text.Text;
-//import net.minecraft.network.chat.Component;
+import io.github.pengzixuan30.gamesai.tools.GamesAIToolsRegister;
+import io.github.pengzixuan30.gamesai.translations.GamesAITranslations;
 
 public class GamesAIRequestAI {
-    public static String askAi(String playerName, String model, String content) {
+    public static String askAi(String playerName, String model, String content, boolean noHistory, Consumer<String> feedback) {
         if (content == null || content.isBlank()) {
             return GamesAITranslations.tr("command.games_ai.ask.empty");
         }
@@ -48,11 +42,29 @@ public class GamesAIRequestAI {
 
         List<ChatCompletionMessageParam> history = GamesAI.getHistory(playerName, model);
 
+        ChatCompletionMessageParam data = ChatCompletionMessageParam.ofAssistant(
+                ChatCompletionAssistantMessageParam.builder().content(GamesAI.getDatabase().dataList().values().toString()).build()
+        );
+
+        List<Map<String, String>> skillsIndex = GamesAI.getSkillsIndex();
+        StringBuilder skillsText = new StringBuilder();
+        if (!skillsIndex.isEmpty()) {
+            for (Map<String, String> entry : skillsIndex) {
+                skillsText.append("- ").append(entry.get("skills"))
+                        .append(": ").append(entry.get("summary")).append("\n");
+            }
+        }
+
         List<ChatCompletionMessageParam> messages = new ArrayList<>();
         messages.add(ChatCompletionMessageParam.ofSystem(
-            ChatCompletionSystemMessageParam.builder().content(config.getPrompt()).build()
+            ChatCompletionSystemMessageParam.builder()
+                    .content(GamesAI.resolvePrompt(config.getPrompt()) + "\n\n"
+                            + GamesAITranslations.tr("messages.games_ai.skills_index",
+                                    skillsText.toString()))
+                    .build()
         ));
-        messages.addAll(history);
+        messages.add(data);
+        if (!noHistory) messages.addAll(history);
         messages.add(userMsg);
 
         if (GamesAI.isDebugMode()) {
@@ -73,6 +85,7 @@ public class GamesAIRequestAI {
 
             ChatCompletionCreateParams.Builder builder = ChatCompletionCreateParams.builder()
                     .model(config.getAiModel())
+                    .tools(GamesAIToolsRegister.buildToolList())
                     .messages(messages);
 
             ChatCompletionCreateParams params = builder.build();
@@ -83,12 +96,61 @@ public class GamesAIRequestAI {
                         .completions()
                         .create(params);
 
+                var message = completion.choices().getFirst().message();
+
                 String reply = completion.choices().stream()
                         .flatMap(choice -> choice.message().content().stream())
                         .collect(Collectors.joining());
 
                 if (reply.isBlank()) {
                     reply = GamesAITranslations.tr("command.games_ai.ask.empty_reply");
+                }
+
+                if (message.toolCalls().isPresent() && !message.toolCalls().get().isEmpty()) {
+                    List<ChatCompletionMessageToolCall> toolCalls = message.toolCalls().get();
+
+                    messages.add(ChatCompletionMessageParam.ofAssistant(
+                            ChatCompletionAssistantMessageParam.builder()
+                                    .toolCalls(toolCalls)
+                                    .build()
+                    ));
+
+                    if (!reply.isBlank()) feedback.accept(config.getAiName() + reply);
+
+                    for (ChatCompletionMessageToolCall toolCall : toolCalls) {
+                        ChatCompletionMessageFunctionToolCall funcCall = toolCall.asFunction();
+                        String funcName = funcCall.function().name();
+                        String rawArgs = funcCall.function().arguments();
+                        String callId = funcCall.id();
+
+                        feedback.accept(config.getAiName()
+                                + GamesAITranslations.tr("command.games_ai.ask.tool_calling", funcName));
+
+                        try {
+                            String toolResult = GamesAIToolsRegister.dispatch(
+                                    funcName, feedback, config.getAiName(), rawArgs);
+
+                            feedback.accept(config.getAiName()
+                                    + GamesAITranslations.tr("command.games_ai.ask.tool_success", funcName));
+                            messages.add(ChatCompletionMessageParam.ofTool(
+                                    ChatCompletionToolMessageParam.builder()
+                                            .toolCallId(callId)
+                                            .content(toolResult)
+                                            .build()
+                            ));
+                        } catch (Exception e) {
+                            GamesAI.LOGGER.error("[GamesAI] Tool dispatch failed: {}", funcName, e);
+                            feedback.accept(config.getAiName()
+                                    + GamesAITranslations.tr("command.games_ai.ask.tool_error", e.getMessage()));
+                            messages.add(ChatCompletionMessageParam.ofTool(
+                                    ChatCompletionToolMessageParam.builder()
+                                            .toolCallId(callId)
+                                            .content("Tool execution failed: " + e)
+                                            .build()
+                            ));
+                        }
+                    }
+                    continue;
                 }
 
                 ChatCompletionMessageParam assistantMsg = ChatCompletionMessageParam.ofAssistant(

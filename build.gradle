@@ -35,6 +35,7 @@ repositories {
     // See https://docs.gradle.org/current/userguide/declaring_repositories.html
     // for more information about repositories.
     mavenCentral()
+    maven { url = "https://maven.terraformersmc.com/releases/" }
 }
 
 configurations {
@@ -51,21 +52,38 @@ dependencies {
     implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
     // modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-    implementation "com.openai:openai-java:4.39.1"
-    // modImplementation "com.openai:openai-java:4.39.1"
-    include "com.openai:openai-java-core:4.39.1"
-    include "com.openai:openai-java-client-okhttp:4.39.1"
+    // openai-java
+    implementation "com.openai:openai-java:4.43.0"
+    // modImplementation "com.openai:openai-java:4.43.0"
+    include "com.openai:openai-java-core:4.43.0"
+    include "com.openai:openai-java-client-okhttp:4.43.0"
+
     // Kotlin
-    include "org.jetbrains.kotlin:kotlin-stdlib:2.1.0"
-    include "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.1.0"
-    include "org.jetbrains.kotlin:kotlin-reflect:2.1.0"
-    // Jackson
+    include "org.jetbrains.kotlin:kotlin-stdlib:2.4.10"
+    include "org.jetbrains.kotlin:kotlin-stdlib-jdk8:2.4.10"
+    include "org.jetbrains.kotlin:kotlin-reflect:2.4.10"
+
+    // Jackson (match openai-java transitive dependency versions)
+    include "com.fasterxml.jackson.core:jackson-databind:2.18.2"
+    include "com.fasterxml.jackson.core:jackson-core:2.18.2"
+    include "com.fasterxml.jackson.core:jackson-annotations:2.18.2"
     include "com.fasterxml.jackson.module:jackson-module-kotlin:2.18.2"
     include "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.18.2"
     include "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.18.2"
+
     // OkHttp
     include "com.squareup.okhttp3:okhttp:4.12.0"
     include "com.squareup.okio:okio-jvm:3.9.0"
+
+    // SQLite
+    include "org.xerial:sqlite-jdbc:3.45.0.0"
+
+    // Groovy
+    implementation "org.apache.groovy:groovy:5.0.7"
+    include "org.apache.groovy:groovy:5.0.7"
+
+    // ModMenu (optional integration)
+    compileOnly 'com.terraformersmc:modmenu:[14.0,)'
 }
 
 processResources {
@@ -88,6 +106,7 @@ tasks.withType(JavaCompile).configureEach {
     // see http://yodaconditions.net/blog/fix-for-java-file-encoding-problems-with-gradle.html
     // If Javadoc is generated, this must be specified in that task too.
     it.options.encoding = "UTF-8"
+    it.options.compilerArgs += ['-parameters']
     if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible()) {
         it.options.release.set(targetJavaVersion)
     }
