@@ -51,6 +51,8 @@
   - [AI Tools](#ai-tools)
     - [Built-in Tools](#built-in-tools)
     - [Custom Tools via Groovy](#custom-tools-via-groovy)
+  - [Skills](#skills)
+    - [Adding Skills](#adding-skills)
   - [Project Structure](#project-structure)
   - [Architecture](#architecture)
   - [Building](#building)
