@@ -1,11 +1,12 @@
 plugins {
-    // id 'fabric-loom' version "${loom_version}"
-    id 'net.fabricmc.fabric-loom' version "${loom_version}"
+    id 'fabric-loom' version "${loom_version}"
+    // id 'net.fabricmc.fabric-loom' version "${loom_version}"
     id 'maven-publish'
 }
 
 version = project.mod_version
 group = project.maven_group
+minecraft_version = project.minecraft_version
 
 base {
     archivesName = project.archives_base_name
@@ -44,17 +45,37 @@ configurations {
 dependencies {
     // To change the versions see the gradle.properties file
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
-    // mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+    if (minecraft_version.split("\\.")[0] == "1") {
+        mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+    }
 
-    implementation "net.fabricmc:fabric-loader:${project.loader_version}"
-    // modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    if (minecraft_version.split("\\.")[0] != "1") {
+        implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+        implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-    implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
-    // modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+        //openai-java
+        implementation "com.openai:openai-java:4.43.0"
+
+        //groovy
+        implementation "org.apache.groovy:groovy:5.0.7"
+
+        // ModMenu (optional integration)
+        compileOnly 'com.terraformersmc:modmenu:[14.0,)'
+    } else {
+        modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+        modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+
+        //openai-java
+        modImplementation "com.openai:openai-java:4.43.0"
+
+        //groovy
+        modImplementation "org.apache.groovy:groovy:5.0.7"
+
+        //modMenu (optional)
+        modClientCompileOnly 'com.terraformersmc:modmenu:[14.0,)'
+    }
 
     // openai-java
-    implementation "com.openai:openai-java:4.43.0"
-    // modImplementation "com.openai:openai-java:4.43.0"
     include "com.openai:openai-java-core:4.43.0"
     include "com.openai:openai-java-client-okhttp:4.43.0"
 
@@ -79,11 +100,7 @@ dependencies {
     include "org.xerial:sqlite-jdbc:3.45.0.0"
 
     // Groovy
-    implementation "org.apache.groovy:groovy:5.0.7"
     include "org.apache.groovy:groovy:5.0.7"
-
-    // ModMenu (optional integration)
-    compileOnly 'com.terraformersmc:modmenu:[14.0,)'
 }
 
 processResources {
