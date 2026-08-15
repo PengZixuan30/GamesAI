@@ -21,11 +21,13 @@
 > [!NOTE]
 > Welcome to GamesAI for Fabric! This mod brings AI assistants into Minecraft — ask questions, manage data, and configure AI backends right from the game.
 
+> [!NOTE]
+> Due to the author's limited energy, we will not support versions below 1.21 or non-Fabric loaders.
+
 <details>
 <summary>Table of Contents (click to expand)</summary>
 
 - [GamesAI for Fabric](#gamesai-for-fabric)
-  - [Features](#features)
   - [Installation](#installation)
     - [Prerequisites](#prerequisites)
     - [Steps](#steps)
@@ -53,6 +55,9 @@
     - [Custom Tools via Groovy](#custom-tools-via-groovy)
   - [Skills](#skills)
     - [Adding Skills](#adding-skills)
+  - [Hot Reload](#hot-reload)
+    - [Triggering a Hot Reload](#triggering-a-hot-reload)
+    - [What Happens During a Hot Reload](#what-happens-during-a-hot-reload)
   - [Project Structure](#project-structure)
   - [Architecture](#architecture)
   - [Building](#building)
@@ -63,31 +68,21 @@
     - [`/ask` Returns Errors](#ask-returns-errors)
     - [AI Tools Not Working](#ai-tools-not-working)
     - [Config Screen Issues](#config-screen-issues)
+  - [What's New](#whats-new)
+    - [Version 0.2.0](#version-020)
+      - [🎯 Highlights](#-highlights)
+      - [1. Client-side Config Screen](#1-client-side-config-screen)
+      - [2. Client Command `/c-ask`](#2-client-command-c-ask)
+      - [3. Database, External Prompts, Skills, and Custom Tools](#3-database-external-prompts-skills-and-custom-tools)
+      - [4. `/ask` No-History Mode](#4-ask-no-history-mode)
+      - [5. AI Tool Calling](#5-ai-tool-calling)
+      - [6. `extra_body` Config](#6-extra_body-config)
   - [Version Compatibility](#version-compatibility)
-  - [Acknowledgements](#acknowledgements)
+  - [Acknowledgements \& Disclaimer](#acknowledgements--disclaimer)
+  - [Sponsorship \& Contributors](#sponsorship--contributors)
   - [License](#license)
 
 </details>
-
----
-
-## Features
-
-- **`/ask` command** — Ask AI questions directly from Minecraft chat
-- **Client-side `/c-ask` command** — Ask AI from the client without server commands
-- **Multi-model support** — Switch between AI models via `-m` flag
-- **Multi-profile configuration** — Define multiple AI backends with independent API keys, prompts, and base URLs
-- **Async execution** — AI requests run off the main thread, never freezing the server
-- **OpenAI-compatible API** — Works with OpenAI, local LLMs (Ollama / LM Studio), or self-hosted endpoints
-- **Auto-generated config** — First run creates `config/games_ai/config.json`
-- **Multi-language** — Server-wide language switching (en_us / zh_cn), live reload without restart
-- **Conversation history** — Per-player, per-model history with configurable length and auto-trimming
-- **Context-sensitive help** — `/gamesai help` adapts to your current command context
-- **In-game config GUI** — Press **F6** to open the visual configuration screen
-- **Public database** — SQLite-based key-value store accessible by AI tools and commands
-- **Groovy custom tools** — Extend AI capabilities with custom Groovy scripts
-- **Prompt file support** — Reference external `.md` files for system prompts via `> filename`
-- **Debug mode** — Toggle request logging for troubleshooting API issues
 
 ---
 
@@ -102,11 +97,15 @@
 
 ### Steps
 
-1. Download the latest `.jar` from [Releases](https://github.com/PengZixuan30/GamesAI/releases)
+1. Download the latest `.jar` from [Modrinth](https://modrinth.com/mod/gamesai)
 2. Place it in your `.minecraft/mods/` folder
 3. Launch the game with Fabric Loader
 4. A default config file is generated at `config/games_ai/config.json` on first run
 5. Edit the config with your API credentials, then reload with `/gamesai reload`
+
+---
+
+Alternatively, download the `.jar` from [GitHub Releases](https://github.com/PengZixuan30/GamesAI/releases) and place it in your `.minecraft/mods/` folder the same way.
 
 ---
 
@@ -157,9 +156,6 @@
 | `/gamesai data read <key>` | Owner (Lv4) | Read value by key |
 | `/gamesai data list` | Owner (Lv4) | List all key-value pairs |
 | `/gamesai data list keys` | Owner (Lv4) | List all keys |
-
-> [!TIP]
-> Type `/gamesai help` in-game for clickable command suggestions.
 
 ### Client Commands
 
@@ -375,17 +371,33 @@ You can extend AI capabilities by writing Groovy scripts:
 2. Annotate methods with `@RegisterTool`:
 
 ```groovy
-import io.github.pengzixuan30.gamesai.tools.GamesAIToolsRegister
+import java.util.function.Consumer;
+import io.github.pengzixuan30.gamesai.tools.GamesAIToolsRegister;
 
 @GamesAIToolsRegister.RegisterTool(
     name = "my_custom_tool",
-    description = "Does something useful"
+    description = "Does something useful",
+    parameters = """
+        {
+          "type": "object",
+          "properties": {
+            "param": {
+              "type": "string",
+              "description": "The value to process"
+            }
+          },
+          "required": ["param"]
+        }
+        """
 )
-String myCustomTool(String param, Consumer<String> feedback, String aiName) {
+String myCustomTool(Consumer<String> feedback, String aiName, String param) {
     feedback.accept("Executing custom tool...")
-    return "Result: $param processed"
+    return "Result: ${param} processed"
 }
 ```
+
+> [!IMPORTANT]
+> The tool method signature **must** place `Consumer<String> feedback` as the first parameter and `String aiName` as the second, followed by any custom parameters declared in the `parameters` JSON schema.
 
 3. Reload with `/gamesai reload` — tools are discovered and registered automatically.
 
@@ -412,6 +424,37 @@ Skills are Markdown files that provide the AI with domain-specific knowledge and
 3. Reload with `/gamesai reload`
 
 Registered skills appear in the AI's system prompt so it knows what knowledge is available.
+
+---
+
+## Hot Reload
+
+GamesAI provides a hot-reload mechanism that lets you apply configuration, tool, skill, and translation changes without restarting the server.
+
+### Triggering a Hot Reload
+
+Hot reload can be triggered in the following ways:
+
+| Method | Description |
+|--------|-------------|
+| `/gamesai reload` | Run by an admin (Lv4) to reload all configuration, tools, skills, and translations. |
+| `/gamesai config lang <lang>` | Applies the language change immediately. |
+| `/gamesai config defaultAi <aiID>` | Applies the default model change immediately. |
+| `/gamesai config maxHistory <value>` | Applies the history length change immediately. |
+| AI tool `reload_plugin` | Called by the AI after modifying tool code or skill files to apply changes immediately. |
+| In-game config screen (F6) | Clicking "Save" writes changes to `config.json` and applies them immediately. |
+
+### What Happens During a Hot Reload
+
+When a hot reload is performed, the mod executes the following steps in order:
+
+1. **Re-read the configuration file** (`config/games_ai/config.json`) — Applies all changes to `prefix`, `max_history`, `lang`, `all_ai`, `default_ai`, etc.
+2. **Reload translations** — Applies the selected `lang` (en_us / zh_cn) without restarting.
+3. **Reload Skills** (`config/games_ai/skills/skills.json`) — Refreshes the skill index; the available skills list in the AI's system prompt is updated synchronously.
+4. **Reload custom tools** (`config/games_ai/tools/*.groovy`) — Hot-loads custom Groovy tool code without restarting the server.
+
+> [!NOTE]
+> Hot reload **does not** clear players' chat history. History is stored in memory and is only cleared on server restart.
 
 ---
 
@@ -547,6 +590,48 @@ The compiled `.jar` will be at: `build/libs/games_ai-*.jar`
 
 ---
 
+## What's New
+
+### Version 0.2.0
+
+#### 🎯 Highlights
+
+- **🖥️ Client-side config screen** — A visual in-game configuration GUI (press **F6**).
+- **💬 Client command `/c-ask`** — Ask AI from the client without server command permissions.
+- **🗄️ Database, external prompts, skills & custom tools** — SQLite public database, `> file.md` prompt references, a skills system, and Groovy custom tools.
+- **🧹 No-history mode** — `/ask -n` asks AI without conversation history (aligned with the MCDReforged version).
+- **🛠️ AI tool calling** — The AI can now call built-in and custom tools to interact with Minecraft and the database.
+- **⚙️ `extra_body` config** — Pass extra provider-specific parameters to the API for more flexibility.
+
+#### 1. Client-side Config Screen
+
+Press **F6** (default) to open the visual configuration screen. Edit general settings and AI profiles with sliders, text fields, and cycle buttons — changes are saved to `config.json` and applied immediately. See [In-Game Config Screen](#in-game-config-screen).
+
+#### 2. Client Command `/c-ask`
+
+The new client-side `/c-ask` command lets players ask AI from the client without needing server command permissions. It supports `-m` (model) and `-n` (no-history) flags, just like `/ask`. See [Client Commands](#client-commands).
+
+#### 3. Database, External Prompts, Skills, and Custom Tools
+
+- **Public database** — SQLite key-value store accessible by AI tools and commands. See [Database System](#database-system).
+- **External prompt files** — Reference external `.md` files as system prompts via `> filename`. See [prompt File Reference](#prompt-file-reference).
+- **Skills** — Markdown files that give the AI domain-specific knowledge. See [Skills](#skills).
+- **Custom tools** — Extend AI capabilities with Groovy scripts. See [Custom Tools via Groovy](#custom-tools-via-groovy).
+
+#### 4. `/ask` No-History Mode
+
+Use `/ask -n <content>` to ask AI without using conversation history (aligned with the MCDReforged version's `!!ask -n`). See [Ask Commands](#ask-commands).
+
+#### 5. AI Tool Calling
+
+The AI can now call built-in tools (Minecraft Wiki search, calculator, whitelist, database, skills, etc.) and custom Groovy tools to perform actions in Minecraft. See [AI Tools](#ai-tools).
+
+#### 6. `extra_body` Config
+
+Each AI profile now supports an `extra_body` field for passing extra provider-specific parameters (e.g. DeepSeek's `{"thinking": {"type": "enabled"}}`). See [4. all_ai](#4-all_ai).
+
+---
+
 ## Version Compatibility
 
 | Minecraft | Fabric Loader (min) | Yarn Mappings (min) | Fabric API (min) |
@@ -568,16 +653,32 @@ The compiled `.jar` will be at: `build/libs/games_ai-*.jar`
 | 1.21.1    | 0.15.11             | 1.21.1+build.3      | 0.102.0+1.21.1   |
 | 1.21      | 0.15.11             | 1.21+build.9        | 0.100.1+1.21     |
 
-> More versions coming soon.
+> Due to the author's limited energy, we will not support versions below 1.21 or non-Fabric loaders.
 
 ---
 
-## Acknowledgements
+## Acknowledgements & Disclaimer
 
 - [DA100](https://github.com/DA100102) — Logo design for this mod
 - [FabricMC](https://fabricmc.net) — Modding framework
 - [openai/openai-java](https://github.com/openai/openai-java) — Official OpenAI Java library
 - Minecraft is a trademark of Mojang / Microsoft. This mod is not affiliated with Mojang.
+
+All content generated by AI (LLM) models is unrelated to this mod.
+
+All consequences arising from custom tools are unrelated to this mod.
+
+---
+
+## Sponsorship & Contributors
+
+Sponsorship address: [Afdian](https://ifdian.net/a/yello)
+
+Those who sponsor GamesAI will appear in the following sponsor list (currently no sponsors):
+
+| # | Sponsor | Amount | Date |
+|---|---------|--------|------|
+| - | - | - | - |
 
 ---
 

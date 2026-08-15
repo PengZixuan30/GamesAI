@@ -21,11 +21,13 @@
 > [!NOTE]
 > 欢迎使用 GamesAI for Fabric！这个模组将 AI 助手带入 Minecraft —— 在游戏中提问、管理数据、配置 AI 后端。
 
+> [!NOTE]
+> 由于作者精力有限，我们不会支持1.21以下的版本和非fabric加载器的版本
+
 <details>
 <summary>目录（点击展开）</summary>
 
 - [GamesAI for Fabric](#gamesai-for-fabric)
-  - [功能](#功能)
   - [安装](#安装)
     - [前提](#前提)
     - [步骤](#步骤)
@@ -53,6 +55,9 @@
     - [Groovy 自定义工具](#groovy-自定义工具)
   - [Skills](#skills)
     - [添加 Skills](#添加-skills)
+  - [热重载](#热重载)
+    - [触发热重载](#触发热重载)
+    - [重载期间发生了什么](#重载期间发生了什么)
   - [项目结构](#项目结构)
   - [架构](#架构)
   - [构建](#构建)
@@ -63,31 +68,21 @@
     - [`/ask` 返回错误](#ask-返回错误)
     - [AI 工具不工作](#ai-工具不工作)
     - [配置界面问题](#配置界面问题)
+  - [本次更新](#本次更新)
+    - [Version 0.2.0](#version-020)
+      - [🎯 核心亮点](#-核心亮点)
+      - [1. 客户端配置页面](#1-客户端配置页面)
+      - [2. 客户端指令 `/c-ask`](#2-客户端指令-c-ask)
+      - [3. 数据库、外部提示词、Skills 与自定义工具](#3-数据库外部提示词skills-与自定义工具)
+      - [4. `/ask` 无历史模式](#4-ask-无历史模式)
+      - [5. AI 调用工具](#5-ai-调用工具)
+      - [6. `extra_body` 配置](#6-extra_body-配置)
   - [版本兼容性](#版本兼容性)
-  - [致谢](#致谢)
+  - [鸣谢与声明](#鸣谢与声明)
+  - [赞助与贡献者名单](#赞助与贡献者名单)
   - [许可证](#许可证)
 
 </details>
-
----
-
-## 功能
-
-- **`/ask` 指令** —— 在聊天框中直接向 AI 提问
-- **客户端 `/c-ask` 指令** —— 无需服务端指令权限即可向 AI 提问
-- **多模型切换** —— 通过 `-m` 指定不同模型
-- **多后端配置** —— 同时配置多个 AI（OpenAI、自定义端点等），独立 API Key、提示词和地址
-- **异步请求** —— AI 思考时不卡服
-- **兼容任意 OpenAI 兼容 API** —— 支持 OpenAI、本地 LLM（Ollama / LM Studio）、自建服务
-- **自动生成配置** —— 首次运行自动创建 `config/games_ai/config.json`
-- **多语言支持** —— 全服语言切换（en_us / zh_cn），热重载无需重启
-- **对话历史** —— 按玩家、按模型维护历史，可配置长度，自动裁剪
-- **上下文帮助** —— `/gamesai help` 根据当前命令上下文显示相关帮助
-- **游戏内配置 GUI** —— 按 **F6** 打开可视化配置界面
-- **公共数据库** —— SQLite 键值存储，AI 工具和指令均可访问
-- **Groovy 自定义工具** —— 通过 Groovy 脚本扩展 AI 能力
-- **Prompt 文件引用** —— 通过 `> 文件名` 引用外部 `.md` 文件作为系统提示词
-- **调试模式** —— 切换请求日志，排查 API 问题
 
 ---
 
@@ -102,11 +97,15 @@
 
 ### 步骤
 
-1. 从 [Releases](https://github.com/PengZixuan30/GamesAI/releases) 下载最新 `.jar`
+1. 从 [Modrinth](https://modrinth.com/mod/gamesai) 下载最新 `.jar`
 2. 放入 `.minecraft/mods/` 文件夹
 3. 用 Fabric Loader 启动游戏
 4. 首次运行后自动在 `config/games_ai/config.json` 生成默认配置
 5. 编辑配置填入 API 凭据，然后 `/gamesai reload` 重载
+
+---
+
+或者，从 [GitHub Releases](https://github.com/PengZixuan30/GamesAI/releases) 下载 `.jar`，用同样的方式放入 `.minecraft/mods/` 文件夹。
 
 ---
 
@@ -157,9 +156,6 @@
 | `/gamesai data read <键>` | 所有者（Lv4） | 读取数据库中指定键的值 |
 | `/gamesai data list` | 所有者（Lv4） | 列出所有键值对 |
 | `/gamesai data list keys` | 所有者（Lv4） | 列出所有键 |
-
-> [!TIP]
-> 在游戏中输入 `/gamesai help` 可查看带点击补全的命令帮助。
 
 ### 客户端指令
 
@@ -375,17 +371,33 @@ AI 可以调用函数与 Minecraft 和数据库交互。
 2. 用 `@RegisterTool` 注解方法：
 
 ```groovy
-import io.github.pengzixuan30.gamesai.tools.GamesAIToolsRegister
+import java.util.function.Consumer;
+import io.github.pengzixuan30.gamesai.tools.GamesAIToolsRegister;
 
 @GamesAIToolsRegister.RegisterTool(
     name = "my_custom_tool",
-    description = "做一些有用的事"
+    description = "做一些有用的事",
+    parameters = """
+        {
+          "type": "object",
+          "properties": {
+            "param": {
+              "type": "string",
+              "description": "要处理的值"
+            }
+          },
+          "required": ["param"]
+        }
+        """
 )
-String myCustomTool(String param, Consumer<String> feedback, String aiName) {
+String myCustomTool(Consumer<String> feedback, String aiName, String param) {
     feedback.accept("正在执行自定义工具...")
-    return "结果: $param 已处理"
+    return "结果: ${param} 已处理"
 }
 ```
+
+> [!IMPORTANT]
+> 工具方法的签名**必须**将 `Consumer<String> feedback` 作为第一个参数、`String aiName` 作为第二个参数，之后才是 `parameters` JSON Schema 中声明的自定义参数。
 
 3. `/gamesai reload` 重载——工具自动发现并注册。
 
@@ -412,6 +424,37 @@ Skills 是 Markdown 文件，为 AI 提供特定领域的知识和指令。AI �
 3. `/gamesai reload` 重载
 
 已注册的 Skills 会显示在 AI 的系统提示词中，让 AI 知道有哪些知识可用。
+
+---
+
+## 热重载
+
+GamesAI 提供了完善的热重载机制，让你在不重启服务器的情况下应用配置、工具、Skills 和语言文件的变更。
+
+### 触发热重载
+
+热重载可通过以下方式触发：
+
+| 方式 | 说明 |
+|------|------|
+| `/gamesai reload` | 管理员（Lv4）手动执行，重新加载全部配置、工具、Skills 与语言文件。 |
+| `/gamesai config lang <语言>` | 修改语言后立即生效。 |
+| `/gamesai config defaultAi <aiID>` | 修改默认模型后立即生效。 |
+| `/gamesai config maxHistory <值>` | 修改历史长度后立即生效。 |
+| AI 工具 `reload_plugin` | AI 在修改工具代码或技能文件后调用，确保变更立即生效。 |
+| 游戏内配置界面（F6） | 点击「保存」将修改写入 `config.json` 并立即生效。 |
+
+### 重载期间发生了什么
+
+执行热重载时，模组会依次执行以下操作：
+
+1. **重新读取配置文件** (`config/games_ai/config.json`) — 应用 `prefix`、`max_history`、`lang`、`all_ai`、`default_ai` 等全部配置变更。
+2. **重新加载语言文件** — 应用所选 `lang`（en_us / zh_cn），无需重启。
+3. **重新加载 Skills** (`config/games_ai/skills/skills.json`) — 刷新技能索引，AI 系统提示词中的可用技能列表同步更新。
+4. **重新加载自定义工具** (`config/games_ai/tools/*.groovy`) — 热加载自定义 Groovy 工具代码，无需重启服务器。
+
+> [!NOTE]
+> 热重载**不会丢失**玩家的聊天历史。历史仅存内存，只在服务器重启时清空。
 
 ---
 
@@ -547,6 +590,48 @@ cd GamesAI
 
 ---
 
+## 本次更新
+
+### Version 0.2.0
+
+#### 🎯 核心亮点
+
+- **🖥️ 客户端配置页面** — 可视化游戏内配置界面（按 **F6** 打开）。
+- **💬 客户端指令 `/c-ask`** — 无需服务端指令权限即可从客户端向 AI 提问。
+- **🗄️ 数据库、外部提示词、Skills 与自定义工具** — SQLite 公共数据库、`> 文件.md` 提示词引用、Skills 系统与 Groovy 自定义工具。
+- **🧹 无历史模式** — `/ask -n` 不带对话历史提问（与 MCDReforged 版本对齐）。
+- **🛠️ AI 调用工具** — AI 现在可以调用内置与自定义工具，与 Minecraft 和数据库交互。
+- **⚙️ `extra_body` 配置** — 向 API 传递提供商特有的额外参数，提供更多选择。
+
+#### 1. 客户端配置页面
+
+按 **F6**（默认）打开可视化配置界面。通过滑杆、文本框和循环按钮编辑通用设置与 AI 模型配置——修改即时保存到 `config.json` 并立即生效。见[游戏内配置界面](#游戏内配置界面)。
+
+#### 2. 客户端指令 `/c-ask`
+
+新增客户端 `/c-ask` 指令，玩家无需服务端指令权限即可向 AI 提问。与 `/ask` 一样支持 `-m`（指定模型）和 `-n`（无历史）标志。见[客户端指令](#客户端指令)。
+
+#### 3. 数据库、外部提示词、Skills 与自定义工具
+
+- **公共数据库** — SQLite 键值存储，AI 工具和指令均可访问。见[数据库系统](#数据库系统)。
+- **外部提示词文件** — 通过 `> 文件名` 引用外部 `.md` 文件作为系统提示词。见[prompt 文件引用](#prompt-文件引用)。
+- **Skills** — 为 AI 提供特定领域知识的 Markdown 文件。见[Skills](#skills)。
+- **自定义工具** — 通过 Groovy 脚本扩展 AI 能力。见[Groovy 自定义工具](#groovy-自定义工具)。
+
+#### 4. `/ask` 无历史模式
+
+使用 `/ask -n <内容>` 不带对话历史提问（与 MCDReforged 版本的 `!!ask -n` 对齐）。见[AI 提问指令](#ai-提问指令)。
+
+#### 5. AI 调用工具
+
+AI 现在可以调用内置工具（Minecraft Wiki 搜索、计算器、白名单、数据库、Skills 等）和自定义 Groovy 工具，在 Minecraft 中执行操作。见[AI 工具](#ai-工具)。
+
+#### 6. `extra_body` 配置
+
+每个 AI 配置现在支持 `extra_body` 字段，用于传递提供商特有的额外参数（如 DeepSeek 的 `{"thinking": {"type": "enabled"}}`）。见[4. all_ai](#4-all_ai)。
+
+---
+
 ## 版本兼容性
 
 | Minecraft | Fabric Loader（最低） | Yarn Mappings（最低） | Fabric API（最低） |
@@ -568,16 +653,32 @@ cd GamesAI
 | 1.21.1    | 0.15.11              | 1.21.1+build.3        | 0.102.0+1.21.1    |
 | 1.21      | 0.15.11              | 1.21+build.9          | 0.100.1+1.21      |
 
-> 更多版本即将添加。
+> 由于作者精力有限，我们不会支持1.21以下的版本和非fabric加载器的版本
 
 ---
 
-## 致谢
+## 鸣谢与声明
 
 - [DA100](https://github.com/DA100102) —— 为本模组设计 Logo
 - [FabricMC](https://fabricmc.net) —— 模组框架
 - [openai/openai-java](https://github.com/openai/openai-java) —— OpenAI 官方 Java 库
 - Minecraft 是 Mojang / Microsoft 的商标。本模组与 Mojang 无关。
+
+AI（LLM）模型生成的一切内容与本模组无关
+
+自定义工具造成的一切后果与本模组无关
+
+---
+
+## 赞助与贡献者名单
+
+赞助地址：[爱发电](https://ifdian.net/a/yello)
+
+为 GamesAI 赞助的将会出现在下列的赞助者名单中（当前没有赞助者）：
+
+| # | 赞助者 | 金额 | 日期 |
+|---|--------|------|------|
+| - | - | - | - |
 
 ---
 
